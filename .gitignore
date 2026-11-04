@@ -118,3 +118,7 @@ InitTestScene*.unity*
 Thumbs.db
 .idea/
 .vscode/
+
+# Meta Immersive Debugger Dev Agent: per-machine access token + LAN IP, regenerated automatically
+/[Aa]ssets/[Rr]esources/DevAgentSettings.asset
+/[Aa]ssets/[Rr]esources/DevAgentSettings.asset.meta
