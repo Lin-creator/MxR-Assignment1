@@ -17,26 +17,26 @@ Mixed Reality Praktikum – Assignment 1 (Passthrough, Wandschild, interaktive M
 Die App zeigt den echten Raum im Passthrough und ergänzt ihn um einen virtuellen 3D-Drucker:
 
 - An der **Hauptwand des Raums** (MRUK *Key Wall*) hängt ein Infoschild mit Titel, Name des Autors,
-  einer Beschreibung, wie ein FDM-Drucker funktioniert, und einer Live-Statuszeile.
+einer Beschreibung, wie ein FDM-Drucker funktioniert, und einer Live-Statuszeile.
 - Der **3D-Drucker** steht auf dem größten Tisch im Raum oder, wenn es keinen passenden gibt, auf einem
-  virtuellen Podest vor der Hauptwand neben dem Schild.
+virtuellen Podest vor der Hauptwand neben dem Schild.
 - Das **Display des Druckers ist ein Touchscreen:** Antippen (Finger oder Controller) startet, pausiert und setzt einen Druck fort;
-  es „atmet“ (pulsierendes Leuchten), solange es auf eine Eingabe wartet.
+es „atmet“ (pulsierendes Leuchten), solange es auf eine Eingabe wartet.
 - **Modellauswahl:** Fünf Modelle (Würfel, Zahnrad, gedrehter Turm, Schachbauer, Vase) stehen als halbtransparente
-  „Geister“ auf dem Druckbett – das gewählte in der Mitte, das vorherige links und das nächste rechts, kleiner und
-  noch blasser. Mit dem Finger (oder der Controller-Spitze) wischt man seitlich über die Vorschauen: sie leuchten auf, folgen dem Finger und rasten beim Loslassen auf dem gewählten Modell ein.
-  Ein Druck dauert je nach Modell 5–10 Sekunden; der Geist bleibt als Umriss stehen, in den das Teil hineinwächst.
-  Druckkopf, Bett und Portal fahren dabei realistisch, und auf dem Bett wächst Schicht für Schicht ein Bauteil.
-  Feedback gibt es über das aufleuchtende Display, eine Statusleuchte, Text und Hinweise auf dem Display, Motorgeräusch, Pieptöne,
-  einen Abschluss-Gong, Controller-Vibration und die Statuszeile am Schild.
+„Geister“ auf dem Druckbett – das gewählte in der Mitte, das vorherige links und das nächste rechts, kleiner und
+noch blasser. Mit dem Finger (oder der Controller-Spitze) wischt man seitlich über die Vorschauen: sie leuchten auf, folgen dem Finger und rasten beim Loslassen auf dem gewählten Modell ein.
+Ein Druck dauert je nach Modell 5–10 Sekunden; der Geist bleibt als Umriss stehen, in den das Teil hineinwächst.
+Druckkopf, Bett und Portal fahren dabei realistisch, und auf dem Bett wächst Schicht für Schicht ein Bauteil.
+Feedback gibt es über das aufleuchtende Display, eine Statusleuchte, Text und Hinweise auf dem Display, Motorgeräusch, Pieptöne,
+einen Abschluss-Gong, Controller-Vibration und die Statuszeile am Schild.
 - Das **fertige Bauteil kann man greifen** – ein schwebender Hinweis „Grab me!“ zeigt darauf –, werfen oder ablegen; es fällt auf den echten Boden oder Tisch
-  (unsichtbare Raum-Collider der *Effect Mesh*).
+(unsichtbare Raum-Collider der *Effect Mesh*).
 - **Schild und Drucker lassen sich verschieben:** Mit dem Strahl (Controller-Trigger / Pinch mit der Hand)
-  gleitet das Schild an den Wänden entlang und springt auf andere Wände; der Drucker wandert über Boden
-  und Tische (auf Tischen verschwindet das Podest) und dreht sich dabei zum Nutzer.
+gleitet das Schild an den Wänden entlang und springt auf andere Wände; der Drucker wandert über Boden
+und Tische (auf Tischen verschwindet das Podest) und dreht sich dabei zum Nutzer.
 - **Raumwechsel:** Hebt man die linke Hand bzw. den linken Controller ins Blickfeld, erscheint ein
-  Handgelenk-Menü mit *Re-place* (Raum neu laden, alles neu platzieren) und *Scan room* (Space Setup).
-  Wechselt man während die App läuft in einen anderen Raum, wird das automatisch erkannt.
+Handgelenk-Menü mit *Re-place* (Raum neu laden, alles neu platzieren) und *Scan room* (Space Setup).
+Wechselt man während die App läuft in einen anderen Raum, wird das automatisch erkannt.
 
 ## 1.2 Externe Ressourcen
 
@@ -53,7 +53,7 @@ Die App zeigt den echten Raum im Passthrough und ergänzt ihn um einen virtuelle
 ### Sounds und Animationen
 
 - **Sounds:** alle selbst synthetisiert mit `Tools/Audio/generate_sounds.py` (nur Python-Standardbibliothek):
-  Motorgeräusch, Start-/Pause-Pieptöne, Fertig-Gong, Aufnehmen-/Ablegen-Geräusch.
+Motorgeräusch, Start-/Pause-Pieptöne, Fertig-Gong, Aufnehmen-/Ablegen-Geräusch.
 - **Animationen:** keine Animation-Clips; die Druckbewegung wird prozedural im Code berechnet (`PrinterController`).
 
 ### Plugins und Bibliotheken
@@ -122,13 +122,15 @@ git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 ```
 
 3. Ordner in **Unity Hub → Add → Add project from disk** öffnen (Editor `6000.3.27f1`).
+
    Beim ersten Öffnen baut Unity `Library/` neu auf (dauert einige Minuten).
-4. **Szene:** Es gibt nur eine Szene, **`Assets/Scenes/MRScene.unity`**; sie ist als einzige in den Build Settings eingetragen.
+4. **Szene:** Es gibt nur eine Szene, `Assets/Scenes/MRScene.unity`; sie ist als einzige in den Build Settings eingetragen.
 5. Quest per USB-C verbinden und USB-Debugging im Headset erlauben.
 6. *File → Build Profiles →* **Android** wählen, *Switch Platform*, unter *Run Device* die Quest auswählen, **Build And Run**.
 7. Im Headset: Raum einrichten, falls noch nicht geschehen (Quest 2: *Einstellungen → Physischer Raum → Space Setup*;
+
    Quest 3 scannt automatisch), und beim Start die Berechtigung für *Raumdaten* erlauben.
-   Ohne Raumdaten werden Schild und Drucker vor dem Nutzer platziert.
+    Ohne Raumdaten werden Schild und Drucker vor dem Nutzer platziert.
 
 ### Bedienung
 
@@ -157,11 +159,12 @@ git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 ### Technische Umsetzung
 
 **Wandschild** (`Assets/Scripts/Sign/`)
+
 - `WallSign` baut das Schild aus Code: dunkle Rückwand, blaue Akzentbalken, TextMeshPro-Texte (Titel, Name,
-  Beschreibung, Live-Statuszeile). Alle Texte sind im Inspector änderbar.
+Beschreibung, Live-Statuszeile). Alle Texte sind im Inspector änderbar.
 - `WallSignPlacer` wartet auf MRUKs *Scene loaded*-Callback, nimmt die **Key Wall** des Raums
-  (`MRUKRoom.GetKeyWall` – die längste Wand ohne andere Wand dahinter) und zentriert das Schild 1,5 m über
-  dem Boden, 1 cm vor der Wand, Blickrichtung in den Raum. Ohne Raumdaten: 2 m vor dem Nutzer.
+(`MRUKRoom.GetKeyWall` – die längste Wand ohne andere Wand dahinter) und zentriert das Schild 1,5 m über
+dem Boden, 1 cm vor der Wand, Blickrichtung in den Raum. Ohne Raumdaten: 2 m vor dem Nutzer.
 
 **Drucker** (`Assets/Scripts/Printer/`)
 
@@ -229,9 +232,9 @@ Kinder), deshalb bewegt der Controller-Code `PrintHead` zusammen mit `Gantry`.
 ### Versionsverwaltung
 
 - `.gitignore` basiert auf dem offiziellen [GitHub-Unity-Template](https://github.com/github/gitignore/blob/main/Unity.gitignore)
-  (plus maschinenspezifische Meta-Einstellungen, Build-Nebenprodukte und Unitys Crash-Recovery-Szenen).
+(plus maschinenspezifische Meta-Einstellungen, Build-Nebenprodukte und Unitys Crash-Recovery-Szenen).
 - Binärdateien (Modelle, Texturen, Audio, Schriften, native Bibliotheken) liegen in **Git LFS**, siehe `.gitattributes`;
-  Unity-YAML wird mit LF-Zeilenenden gespeichert. Prüfen mit `git lfs ls-files`.
+Unity-YAML wird mit LF-Zeilenenden gespeichert. Prüfen mit `git lfs ls-files`.
 - Workflow: `main` bleibt lauffähig; jede Aufgabe wird auf einem `feature/*`-Branch entwickelt und mit `--no-ff` gemergt.
 
 ## 1.4 Eigenleistung und Reflexion
@@ -239,23 +242,19 @@ Kinder), deshalb bewegt der Controller-Code `PrintHead` zusammen mit `Gantry`.
 ### Eigenleistung
 
 - **Konzept:** Idee der App und aller Interaktionen (Druck per Touch-Display, Modellauswahl über Vorschauen,
-  greifbare Bauteile, Verschieben, Raumwechsel), Auswahl des Druckermodells.
+greifbare Bauteile, Verschieben, Raumwechsel), Auswahl des Druckermodells.
 - **Unity Editor:** Projekt-Setup (URP, Meta XR SDK, OpenXR, Android), Szene mit Building Blocks und deren
-  Konfiguration, `PrintedPart`-Prefab mit Grab-Interaktion, Builds und Tests auf der Quest 2.
+Konfiguration, `PrintedPart`-Prefab mit Grab-Interaktion, Builds und Tests auf der Quest 2.
 - **Code:** C#-, Blender- und Audio-Skripte mit Unterstützung eines KI-Assistenten (Claude) entwickelt –
-  Anforderungen und Tests von mir, Commits mit `Co-Authored-By` gekennzeichnet.
+Anforderungen und Tests von mir, Commits mit `Co-Authored-By` gekennzeichnet.
 - **Zeitaufwand:** etwa 13–15 Stunden. Am meisten Zeit kosteten die Quest-Builds (10–15 min pro Build, zwei
-  PC-Abstürze), die Fehlersuche in der Szene und das Aufteilen des Druckermodells für die Animation.
+PC-Abstürze), die Fehlersuche in der Szene und das Aufteilen des Druckermodells für die Animation.
 
 ### Reflexion
 
 - **Einfach:** Passthrough, Raumdaten und Hand-/Controller-Interaktion über Metas Building Blocks, MRUK und
-  das Interaction SDK.
+das Interaction SDK.
 - **Schwer:** Vieles ließ sich nur auf dem Headset testen, bei langen Build-Zeiten ein langsamer Kreislauf;
-  dazu Linux-Probleme mit dem Meta Setup Tool und ein Editor-Absturz.
-- **Gelernt:** Inhalte an den echten Raum binden und Interaktionen durch Feedback (Leuchten, Hinweise, Sound,
-  Vibration) selbsterklärend machen. Nächstes Mal würde ich früher und öfter auf dem Headset testen.
-
-## Autor
-
-Linus Pihan
+dazu Linux-Probleme mit dem Meta Setup Tool und ein Editor-Absturz.
+- **Gelernt:** Inhalte an den echten Raum binden und Interaktionen durch Feedback (Leuchten, Hinweise, Sound,  
+Vibration) selbsterklärend machen. Nächstes Mal würde ich früher und öfter auf dem Headset testen.
