@@ -1127,8 +1127,8 @@ MonoBehaviour:
   preferTable: 1
   minTableSize: {x: 0.6, y: 0.4}
   standHeight: 0.75
-  standFootprint: {x: 0.8, y: 0.55}
-  standOffsetX: -0.12
+  standFootprint: {x: 0.6, y: 0.55}
+  standOffsetX: 0
   standMaterial: {fileID: 2100000, guid: e435fb5b6c564f8195c24576627ed05c, type: 2}
   distanceFromWall: 0.9
   sideOffset: 0.6

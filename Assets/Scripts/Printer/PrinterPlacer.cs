@@ -23,9 +23,9 @@ namespace MxR.Printer
         [Header("Stand (when there is no table)")]
         [SerializeField] float standHeight = 0.75f;
         [Tooltip("Width (x) and depth (z) of the stand (m).")]
-        [SerializeField] Vector2 standFootprint = new Vector2(0.8f, 0.55f);
-        [Tooltip("Stand centre relative to the printer along x; negative = more room on the user's right for the button.")]
-        [SerializeField] float standOffsetX = -0.12f;
+        [SerializeField] Vector2 standFootprint = new Vector2(0.6f, 0.55f);
+        [Tooltip("Stand centre relative to the printer along x (0 = centred below the printer).")]
+        [SerializeField] float standOffsetX = 0f;
         [SerializeField] Material standMaterial;
 
         [Header("Position in front of the key wall")]
