@@ -27,8 +27,8 @@ namespace MxR.Printer
         [SerializeField] Color finishedColor = new Color(0.9f, 1f, 0.9f);
 
         [Header("Display")]
-        [Tooltip("Screen normal in printer space (measured in Blender: faces front, tilted up ~15 deg).")]
-        [SerializeField] Vector3 screenNormal = new Vector3(-0.089f, 0.267f, 0.960f);
+        [Tooltip("Screen normal in printer space, measured from the screen faces of Printer3D.fbx: straight forward, tilted up 25 deg.")]
+        [SerializeField] Vector3 screenNormal = new Vector3(0f, 0.422f, 0.907f);
         [Tooltip("Text area on the screen (m); the screen itself is 0.079 x 0.049 m.")]
         [SerializeField] Vector2 screenSize = new Vector2(0.07f, 0.042f);
         [SerializeField] Color displayTextColor = new Color(0.85f, 0.95f, 1f);

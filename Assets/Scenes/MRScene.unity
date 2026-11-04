@@ -1084,7 +1084,7 @@ MonoBehaviour:
   printingColor: {r: 0.1, g: 1, b: 0.3, a: 1}
   pausedColor: {r: 1, g: 0.6, b: 0.05, a: 1}
   finishedColor: {r: 0.9, g: 1, b: 0.9, a: 1}
-  screenNormal: {x: -0.089, y: 0.267, z: 0.96}
+  screenNormal: {x: 0, y: 0.422, z: 0.907}
   screenSize: {x: 0.07, y: 0.042}
   displayTextColor: {r: 0.85, g: 0.95, b: 1, a: 1}
   font: {fileID: 0}
@@ -1108,7 +1108,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MxR.Printer.PrinterTouchscreen
   buttonPrefab: {fileID: 4171210596153234762, guid: 323cb65d2594c79499a11a99ff0fb347, type: 3}
-  screenNormal: {x: -0.089, y: 0.267, z: 0.96}
+  screenNormal: {x: 0, y: 0.422, z: 0.907}
   touchSize: {x: 0.09, y: 0.06}
   hapticAmplitude: 0.6
   hapticDuration: 0.08

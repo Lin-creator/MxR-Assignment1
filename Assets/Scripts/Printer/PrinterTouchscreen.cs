@@ -32,8 +32,8 @@ namespace MxR.Printer
 
         [Tooltip("Prefab with a PokeInteractable. Default: Interaction SDK sample poke button.")]
         [SerializeField] GameObject buttonPrefab;
-        [Tooltip("Screen normal in printer space (measured in Blender: faces front, tilted up ~15 deg).")]
-        [SerializeField] Vector3 screenNormal = new Vector3(-0.089f, 0.267f, 0.960f);
+        [Tooltip("Screen normal in printer space, measured from the screen faces of Printer3D.fbx: straight forward, tilted up 25 deg.")]
+        [SerializeField] Vector3 screenNormal = new Vector3(0f, 0.422f, 0.907f);
         [Tooltip("Touch area (m). The screen is 0.079 x 0.049 m; slightly larger is easier to hit.")]
         [SerializeField] Vector2 touchSize = new Vector2(0.09f, 0.06f);
 
