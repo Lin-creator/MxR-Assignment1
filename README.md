@@ -82,6 +82,20 @@ git lfs pull   # only needed if LFS was installed after cloning
   bottom on the bed, clears untouched parts on the next print and keeps up to 5 taken parts in the room.
 - `PrinterColliders` adds a MeshCollider to the frame and a BoxCollider to the bed, so parts can be put back.
 
+### Moving the sign and the printer
+
+Point at the sign or the printer with the ray (controller: trigger, hand: pinch), hold and move:
+
+| Object | Behaviour |
+|--------|-----------|
+| Wall sign | Slides along the wall under the ray, stays inside the wall, jumps to another wall when the ray points at it (`SignRepositioner`, uses `MRUKRoom.Raycast` against the wall anchors) |
+| Printer | Follows the ray at the grabbed distance (thumbstick pushes/pulls). A downward `MRUKRoom.Raycast` finds what is below: on a table/cabinet top it stands on it and the stand disappears, on the floor it stands on the stand, outside the room it stays. It turns towards the user while moving (`PrinterRepositioner`) |
+
+`RayDraggable` (`Assets/Scripts/Common/`) adds the Interaction SDK parts at runtime: a trigger `BoxCollider`
+as handle, a `ColliderSurface` and a `RayInteractable`. Feedback: the object lightens when hovered and turns
+blue while it is dragged (`HoverTint`), pick-up/drop sounds, controller vibration, and a short tick when the
+sign changes walls or the printer changes surface.
+
 Sounds are synthesised by `Tools/Audio/generate_sounds.py` (no third-party audio).
 Materials in `Assets/Materials` are derived from URP's `Lit.mat`; emission is enabled in the asset
 so the emissive shader variant is included in the Quest build.

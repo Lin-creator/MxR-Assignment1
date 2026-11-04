@@ -38,10 +38,16 @@ namespace MxR.Printer
         [SerializeField] float fallbackDistance = 1.2f;
 
         public bool IsPlaced { get; private set; }
+        /// <summary>Height of the virtual stand (m); the printer's origin is this far above the floor when on the stand.</summary>
+        public float StandHeight => standHeight;
+        /// <summary>The virtual stand (null until it is needed).</summary>
+        public Transform Stand => stand;
+        public bool UsesStand => stand && stand.gameObject.activeSelf;
         /// <summary>Raised once the printer has been placed.</summary>
         public event Action Placed;
 
         float startTime;
+        Transform stand;
 
 #if UNITY_EDITOR
         void Reset() =>
@@ -94,7 +100,7 @@ namespace MxR.Printer
                 Transform w = wall.transform;   // forward = into the room
                 Vector3 pos = w.position + w.forward * distanceFromWall + w.right * sideOffset;
                 pos.y = FloorHeight(room);
-                CreateStand();
+                SetStandVisible(true);
                 Finish(pos + Vector3.up * standHeight, Quaternion.LookRotation(w.forward, Vector3.up),
                     "on a stand in front of the key wall");
                 return;
@@ -116,7 +122,7 @@ namespace MxR.Printer
 
             Vector3 pos = eye + fwd * fallbackDistance;
             pos.y = floorY;
-            CreateStand();
+            SetStandVisible(true);
             Finish(pos + Vector3.up * standHeight, Quaternion.LookRotation(-fwd, Vector3.up),
                 "on a stand in front of the user (fallback)");
         }
@@ -137,14 +143,21 @@ namespace MxR.Printer
             return Quaternion.LookRotation(toUser.sqrMagnitude > 0.01f ? toUser.normalized : Vector3.back, Vector3.up);
         }
 
-        void CreateStand()
+        /// <summary>Shows the virtual stand below the printer (created on first use) or hides it, e.g. on a table.</summary>
+        public void SetStandVisible(bool visible)
         {
-            var stand = GameObject.CreatePrimitive(PrimitiveType.Cube);   // keeps its BoxCollider (things can be put on it)
-            stand.name = "Stand";
-            stand.transform.SetParent(transform, false);
-            stand.transform.localPosition = new Vector3(standOffsetX, -standHeight * 0.5f, 0f);
-            stand.transform.localScale = new Vector3(standFootprint.x, standHeight, standFootprint.y);
-            if (standMaterial) stand.GetComponent<Renderer>().sharedMaterial = standMaterial;
+            if (!stand)
+            {
+                if (!visible) return;
+                var go = GameObject.CreatePrimitive(PrimitiveType.Cube);   // keeps its BoxCollider (things can be put on it)
+                go.name = "Stand";
+                stand = go.transform;
+                stand.SetParent(transform, false);
+                stand.localPosition = new Vector3(standOffsetX, -standHeight * 0.5f, 0f);
+                stand.localScale = new Vector3(standFootprint.x, standHeight, standFootprint.y);
+                if (standMaterial) go.GetComponent<Renderer>().sharedMaterial = standMaterial;
+            }
+            stand.gameObject.SetActive(visible);
         }
 
         void Finish(Vector3 position, Quaternion rotation, string where)
