@@ -27,8 +27,8 @@ namespace MxR.Printer
         [SerializeField] Color finishedColor = new Color(0.9f, 1f, 0.9f);
 
         [Header("Display")]
-        [Tooltip("Screen normal in printer space (measured in Blender: faces front, tilted up ~15 deg).")]
-        [SerializeField] Vector3 screenNormal = new Vector3(-0.089f, 0.267f, 0.960f);
+        [Tooltip("Screen normal in printer space, measured from the screen faces of Printer3D.fbx: straight forward, tilted up 25 deg.")]
+        [SerializeField] Vector3 screenNormal = new Vector3(0f, 0.422f, 0.907f);
         [Tooltip("Text area on the screen (m); the screen itself is 0.079 x 0.049 m.")]
         [SerializeField] Vector2 screenSize = new Vector2(0.07f, 0.042f);
         [SerializeField] Color displayTextColor = new Color(0.85f, 0.95f, 1f);
@@ -52,6 +52,8 @@ namespace MxR.Printer
         int shownPercent = -1;
         State shownState;
         bool shownEngaged;
+        string shownModel;
+        bool shownPartOnBed;
 
 #if UNITY_EDITOR
         void Reset()
@@ -159,7 +161,11 @@ namespace MxR.Printer
         {
             int percent = Mathf.FloorToInt(printer.Progress * 100f);
             bool engaged = printer.Engage >= 1f;
-            if (!force && percent == shownPercent && printer.State == shownState && engaged == shownEngaged) return;
+            string model = printer.JobName;
+            if (!force && percent == shownPercent && printer.State == shownState && engaged == shownEngaged
+                && model == shownModel && printer.HasPartOnBed == shownPartOnBed) return;
+            shownModel = model;
+            shownPartOnBed = printer.HasPartOnBed;
             shownPercent = percent;
             shownState = printer.State;
             shownEngaged = engaged;
@@ -174,28 +180,39 @@ namespace MxR.Printer
                     break;
                 case State.Printing:
                     screen = $"<b>PRINTING</b>\n{percent}%  <size=60%>{time} left</size>\n<size=45%>tap to pause</size>";
-                    sign = $"Status: printing {percent}% ({time} left)";
+                    sign = $"Status: printing {Named(model)}{percent}% ({time} left)";
                     break;
                 case State.Paused:
                     screen = $"<b>PAUSED</b>\n{percent}%\n<size=45%>tap to resume</size>";
                     sign = $"Status: paused at {percent}%";
                     break;
-                case State.Finished when printer.PrintsGrabbableParts:
-                    screen = "<b>DONE</b>\n<size=60%>take your part</size>\n<size=45%>tap to print again</size>";
-                    sign = "Status: print finished - pick up your part!";
+                case State.Finished when printer.PrintsGrabbableParts && printer.HasPartOnBed:
+                    screen = $"<b>DONE</b>\n<size=60%>grab your part</size>\n<size=45%>tap: print {Short(model)}</size>";
+                    sign = $"Status: {Named(model)}finished - grab it from the bed!";
+                    break;
+                case State.Finished when !string.IsNullOrEmpty(model):
+                    screen = $"<b>{model.ToUpperInvariant()}</b>\n<size=40%>swipe the models · tap to print</size>";
+                    sign = "Status: swipe over the previews on the bed to choose a model, tap the display to print";
                     break;
                 case State.Finished:
                     screen = "<b>DONE</b>\n<size=60%>print finished</size>\n<size=45%>tap to print again</size>";
                     sign = "Status: print finished";
                     break;
                 default:
-                    screen = "<b>READY</b>\n<size=60%>tap to print</size>";
-                    sign = "Status: ready - tap the printer's display to print";
+                    screen = string.IsNullOrEmpty(model)
+                        ? "<b>READY</b>\n<size=60%>tap to print</size>"
+                        : $"<b>{model.ToUpperInvariant()}</b>\n<size=40%>swipe the models · tap to print</size>";
+                    sign = string.IsNullOrEmpty(model)
+                        ? "Status: ready - tap the printer's display to print"
+                        : "Status: swipe over the previews on the bed to choose a model, tap the display to print";
                     break;
             }
             if (display) display.text = screen;
             if (wallSign) wallSign.SetStatus(sign);
         }
+
+        static string Named(string model) => string.IsNullOrEmpty(model) ? "" : model + " ";
+        static string Short(string model) => string.IsNullOrEmpty(model) ? "again" : model.ToLowerInvariant();
 
         static string FormatTime(float seconds)
         {
