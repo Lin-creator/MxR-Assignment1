@@ -1151,11 +1151,11 @@ MonoBehaviour:
   bed: {fileID: 1988479253}
   zCable: {fileID: 1988479252}
   filamentTube: {fileID: 1988479251}
-  printDuration: 30
+  printDuration: 7
   printHeight: 0.05
   printRadius: 0.03
   lapsPerSecond: 1
-  travelTime: 1.5
+  travelTime: 1
   printMaterial: {fileID: 0}
   printedPartPrefab: {fileID: 1544741231838890885, guid: 98315b99da4a5985380baaad2ba8a058, type: 3}
   tintPrintedPart: 1
