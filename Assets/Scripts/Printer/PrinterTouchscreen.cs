@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using MxR.Common;
 using Oculus.Interaction;
-using TMPro;
 using UnityEngine;
 
 namespace MxR.Printer
@@ -18,9 +17,7 @@ namespace MxR.Printer
     /// Feedback on the display itself: the screen "breathes" (slow glow pulse) while it waits for a tap,
     /// glows brighter while a finger hovers over it and flashes when it is pressed (emission of the
     /// display material), plus the click sound and vibration.
-    ///
-    /// With a <see cref="PrintModelSelector"/> the screen is split into three zones: tapping the left /
-    /// right edge (marked with arrows) selects the previous / next model, the middle starts the print.
+    /// The model to print is chosen by swiping over the previews on the bed (<see cref="PreviewSwipe"/>).
     /// </summary>
     [RequireComponent(typeof(PrinterController))]
     public class PrinterTouchscreen : MonoBehaviour
@@ -34,7 +31,7 @@ namespace MxR.Printer
         [SerializeField] GameObject buttonPrefab;
         [Tooltip("Screen normal in printer space, measured from the screen faces of Printer3D.fbx: straight forward, tilted up 25 deg.")]
         [SerializeField] Vector3 screenNormal = new Vector3(0f, 0.422f, 0.907f);
-        [Tooltip("Touch area (m). The screen is 0.079 x 0.049 m; slightly larger is easier to hit.")]
+        [Tooltip("Touch area (m). The screen is 0.079 x 0.050 m; slightly larger is easier to hit.")]
         [SerializeField] Vector2 touchSize = new Vector2(0.09f, 0.06f);
 
         [Header("Screen feedback")]
@@ -48,11 +45,6 @@ namespace MxR.Printer
         [Tooltip("Seconds per pulse.")]
         [SerializeField] float pulsePeriod = 1.6f;
 
-        [Header("Model selection (with PrintModelSelector)")]
-        [Tooltip("Width of the left / right scroll zones on the screen (m).")]
-        [SerializeField] float sideZoneWidth = 0.022f;
-        [SerializeField] Color arrowColor = new Color(0.85f, 0.95f, 1f);
-
         [Header("Haptics (controllers only)")]
         [SerializeField, Range(0f, 1f)] float hapticAmplitude = 0.6f;
         [SerializeField] float hapticDuration = 0.08f;
@@ -60,17 +52,15 @@ namespace MxR.Printer
         static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
         PrinterController printer;
-        PrintModelSelector selector;     // optional: left / right zones scroll through the models
         readonly List<PokeInteractable> zones = new List<PokeInteractable>();
         readonly List<System.Action<PointerEvent>> handlers = new List<System.Action<PointerEvent>>();
         readonly HashSet<PokeInteractable> hoveredZones = new HashSet<PokeInteractable>();
-        PokeInteractable poke, previousZone, nextZone;
-        TextMeshPro previousArrow, nextArrow;
+        PokeInteractable poke;
         Material screenMaterial;     // own instance of the display's emissive material
         Color baseEmission;
         float glow = 1f, flash;      // current multiplier, press flash 0..1
 
-        /// <summary>The poke surface of the print button (middle of the display; null if it could not be created).</summary>
+        /// <summary>The poke surface on the display (null if it could not be created).</summary>
         public PokeInteractable Poke => poke;
 
 #if UNITY_EDITOR
@@ -80,7 +70,6 @@ namespace MxR.Printer
         void Awake()
         {
             printer = GetComponent<PrinterController>();
-            selector = GetComponent<PrintModelSelector>();
             Transform anchor = transform.Find("DisplayAnchor");
             if (!buttonPrefab || !anchor)
             {
@@ -88,21 +77,7 @@ namespace MxR.Printer
                 return;
             }
 
-            if (selector)
-            {
-                // [ < | print | > ]  – the outer zones scroll through the models
-                float middle = touchSize.x - 2f * sideZoneWidth;
-                float side = (middle + sideZoneWidth) * 0.5f;
-                poke = CreateZone("DisplayTouchArea", anchor, 0f, middle);
-                previousZone = CreateZone("DisplayPrevious", anchor, -side, sideZoneWidth);
-                nextZone = CreateZone("DisplayNext", anchor, side, sideZoneWidth);
-                previousArrow = CreateArrow("ArrowPrevious", anchor, -side, "<");
-                nextArrow = CreateArrow("ArrowNext", anchor, side, ">");
-            }
-            else
-            {
-                poke = CreateZone("DisplayTouchArea", anchor, 0f, touchSize.x);
-            }
+            poke = CreateZone("DisplayTouchArea", anchor, 0f, touchSize.x);
 
             FindScreenMaterial();
         }
@@ -136,17 +111,6 @@ namespace MxR.Printer
                 handlers.Add(evt => { if (evt.Type == PointerEventType.Select) OnZoneTapped(zone); });
             }
             return zone;
-        }
-
-        TextMeshPro CreateArrow(string name, Transform anchor, float x, string text)
-        {
-            Vector3 n = screenNormal.normalized;
-            Quaternion rotation = Quaternion.LookRotation(-n, Vector3.up);
-            var arrow = TextFactory.Create(name, transform, anchor.localPosition + n * 0.0012f + rotation * new Vector3(x, 0f, 0f),
-                new Vector2(sideZoneWidth, touchSize.y), 0.16f, TextAlignmentOptions.Center, arrowColor, FontStyles.Bold);
-            arrow.transform.localRotation = rotation;    // text faces -Z like the touch zones
-            arrow.text = text;
-            return arrow;
         }
 
         /// <summary>The display mesh's emissive material slot (the glowing screen), as an own instance.</summary>
@@ -196,21 +160,13 @@ namespace MxR.Printer
 
         void OnZoneTapped(PokeInteractable zone)
         {
-            bool scrolling = selector && selector.CanSelect;
-            if (scrolling && zone == previousZone) selector.Previous();
-            else if (scrolling && zone == nextZone) selector.Next();
-            else printer.TogglePrint();            // middle zone – or any zone while a print is running
+            printer.TogglePrint();
             flash = 1f;
             ControllerHaptics.Pulse(this, hapticAmplitude, hapticDuration);
         }
 
         void Update()
         {
-            // arrows only while a model can be chosen
-            bool arrows = selector && selector.CanSelect;
-            if (previousArrow && previousArrow.gameObject.activeSelf != arrows) previousArrow.gameObject.SetActive(arrows);
-            if (nextArrow && nextArrow.gameObject.activeSelf != arrows) nextArrow.gameObject.SetActive(arrows);
-
             if (!screenMaterial) return;
             flash = Mathf.MoveTowards(flash, 0f, Time.deltaTime * glowFadeSpeed * 0.5f);
 

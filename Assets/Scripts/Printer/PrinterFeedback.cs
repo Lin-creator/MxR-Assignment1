@@ -151,10 +151,8 @@ namespace MxR.Printer
             if (!anchor) { Debug.LogWarning("[PrinterFeedback] DisplayAnchor not found.", this); return; }
 
             Vector3 n = screenNormal.normalized;
-            // with a model selector the screen edges show the < > arrows, so keep the text in the middle
-            Vector2 size = GetComponent<PrintModelSelector>() ? new Vector2(screenSize.x - 0.024f, screenSize.y) : screenSize;
             display = TextFactory.CreateAutoSized("DisplayText", transform, anchor.localPosition + n * 0.001f,
-                size, 0.04f, 0.14f, TextAlignmentOptions.Center, displayTextColor, FontStyles.Normal, font);
+                screenSize, 0.04f, 0.14f, TextAlignmentOptions.Center, displayTextColor, FontStyles.Normal, font);
             // text faces -Z, so its forward must point into the screen
             display.transform.localRotation = Quaternion.LookRotation(-n, Vector3.up);
         }
