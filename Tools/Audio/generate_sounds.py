@@ -7,6 +7,8 @@ Usage (from repo root):  python3 Tools/Audio/generate_sounds.py Assets/Audio
 - beep_start.wav          rising two-tone beep (print started / resumed)
 - beep_pause.wav          falling two-tone beep (print paused)
 - chime_done.wav          three-note major chord arpeggio (print finished)
+- move_pick.wav           short rising sweep (sign / printer picked up with the ray)
+- move_drop.wav           short falling sweep + soft thud (sign / printer put down)
 """
 import math
 import os
@@ -44,6 +46,22 @@ def silence(dur):
     return [0.0] * int(dur * RATE)
 
 
+def sweep(f0, f1, dur, harmonics=(1.0, 0.25)):
+    """Tone whose pitch glides exponentially from f0 to f1."""
+    n = int(dur * RATE)
+    out, phase = [], 0.0
+    for i in range(n):
+        f = f0 * (f1 / f0) ** (i / n)
+        phase += 2 * math.pi * f / RATE
+        out.append(envelope(i, n, 0.004, 0.03) * sum(a * math.sin(phase * (k + 1)) for k, a in enumerate(harmonics)))
+    return out
+
+
+def thud(dur=0.08, freq=120):
+    n = int(dur * RATE)
+    return [math.exp(-i / (0.015 * RATE)) * math.sin(2 * math.pi * freq * i / RATE) for i in range(n)]
+
+
 def motor_loop(dur=2.0):
     rnd = random.Random(42)
     n = int(dur * RATE)
@@ -68,6 +86,9 @@ def main(out_dir):
         chime += tone(f, 0.16, (1.0, 0.5, 0.2))
     chime += tone(2093.0, 0.45, (1.0, 0.4, 0.1))  # C7
     write(os.path.join(out_dir, "chime_done.wav"), chime)
+    write(os.path.join(out_dir, "move_pick.wav"), sweep(500, 1100, 0.09))
+    drop = sweep(900, 420, 0.08)
+    write(os.path.join(out_dir, "move_drop.wav"), [d + 0.9 * t for d, t in zip(drop + [0.0] * 3000, thud() + [0.0] * 10000)])
 
 
 if __name__ == "__main__":
