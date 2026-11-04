@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -42,6 +43,15 @@ namespace MxR.Printer
         [Tooltip("Material of the printed object. Empty = use the filament tube's material.")]
         [SerializeField] Material printMaterial;
 
+        [Header("Printed part")]
+        [Tooltip("Prefab that is printed (set up with 'Add Grab Interaction', pivot at its bottom). " +
+                 "Its size replaces Print Height/Radius. Empty = plain cylinder that cannot be grabbed.")]
+        [SerializeField] GameObject printedPartPrefab;
+        [Tooltip("Colour the printed part with the print material (filament colour).")]
+        [SerializeField] bool tintPrintedPart = true;
+        [Tooltip("Parts taken from the printer that stay in the room; the oldest is removed beyond this.")]
+        [SerializeField, Min(1)] int maxPartsInRoom = 5;
+
         [Header("Testing")]
         [Tooltip("Start a print automatically when entering Play mode (to check the animation in the Editor).")]
         [SerializeField] bool startOnPlay;
@@ -56,6 +66,8 @@ namespace MxR.Printer
         public float Engage => engage;
         /// <summary>Seconds until the current job is finished (only meaningful while printing/paused).</summary>
         public float RemainingSeconds => (1f - Progress) * printDuration;
+        /// <summary>True if finished parts can be picked up (a grabbable part prefab is assigned).</summary>
+        public bool PrintsGrabbableParts => printedPartPrefab != null;
 
         // rest pose (as imported)
         Vector3 gantryRest, headRest, bedRest, tubeRest;
@@ -65,7 +77,14 @@ namespace MxR.Printer
 
         float engage;           // 0 = home position, 1 = at the bed and printing
         float angle;            // current angle of the nozzle circle (radians)
+
+        // part of the current/last job while it is still on the bed
         Transform printedObject;
+        PrintedPart printedPart;
+        Vector3 partFullScale;  // local scale at 100 %
+        float partBottom;       // local y of the part's bottom (relative to its pivot) at 100 %
+        float partHeight, partRadius;
+        readonly List<PrintedPart> partsInRoom = new List<PrintedPart>();
 
         void Reset() => FindParts();
 
@@ -80,6 +99,8 @@ namespace MxR.Printer
             cableRestScale = zCable.localScale;
             cableLength = zCable.GetComponent<MeshFilter>().sharedMesh.bounds.max.y;
             tubeRestSpanX = headRest.x - tubeRest.x;
+            partHeight = printHeight;
+            partRadius = printRadius;
 
             if (printMaterial == null)
                 printMaterial = filamentTube.GetComponent<Renderer>().sharedMaterial;
@@ -116,6 +137,7 @@ namespace MxR.Printer
 
         public void StartNewPrint()
         {
+            RemovePartFromBed();
             Progress = 0f;
             angle = 0f;
             CreatePrintedObject();
@@ -125,7 +147,7 @@ namespace MxR.Printer
         [ContextMenu("Cancel print")]
         public void CancelPrint()
         {
-            if (printedObject) Destroy(printedObject.gameObject);
+            RemovePartFromBed();
             Progress = 0f;
             SetState(PrinterState.Idle);
         }
@@ -143,7 +165,12 @@ namespace MxR.Printer
                 {
                     Progress = Mathf.Min(1f, Progress + dt / printDuration);
                     angle += dt * lapsPerSecond * 2f * Mathf.PI;
-                    if (Progress >= 1f) SetState(PrinterState.Finished);
+                    if (Progress >= 1f)
+                    {
+                        UpdatePrintedObject();                    // final size before the state changes
+                        SetState(PrinterState.Finished);
+                        if (printedPart) printedPart.Release();   // can be picked up now
+                    }
                 }
             }
 
@@ -157,7 +184,7 @@ namespace MxR.Printer
 
         void ApplyPose(float w)
         {
-            float layerHeight = Progress * printHeight;
+            float layerHeight = Progress * partHeight;
 
             // Z: lower the gantry so the nozzle (pivot of PrintHead) touches the current layer
             float nozzleTargetY = bedRest.y + layerHeight;
@@ -165,11 +192,11 @@ namespace MxR.Printer
             gantry.localPosition = gantryRest + Vector3.up * zOffset;
 
             // X: print head rides on the gantry and moves left/right
-            float x = w * printRadius * Mathf.Cos(angle);
+            float x = w * partRadius * Mathf.Cos(angle);
             printHead.localPosition = headRest + new Vector3(x, zOffset, 0f);
 
             // Y (front/back): the bed moves, the head stays -> nozzle draws a circle relative to the bed
-            float z = w * printRadius * Mathf.Sin(angle);
+            float z = w * partRadius * Mathf.Sin(angle);
             bed.localPosition = bedRest - Vector3.forward * z;
 
             // cables: stretch so their free ends follow the gantry / print head
@@ -185,31 +212,99 @@ namespace MxR.Printer
 
         void CreatePrintedObject()
         {
-            if (printedObject) Destroy(printedObject.gameObject);
-
-            var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            go.name = "PrintedObject";
-            Destroy(go.GetComponent<Collider>());
-            go.GetComponent<Renderer>().sharedMaterial = printMaterial;
+            GameObject go;
+            if (printedPartPrefab)
+            {
+                go = Instantiate(printedPartPrefab);
+            }
+            else
+            {
+                go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);   // 2 units high, 1 unit wide
+                Destroy(go.GetComponent<Collider>());
+                go.transform.localScale = new Vector3(2f * printRadius, printHeight * 0.5f, 2f * printRadius);
+            }
+            go.name = "PrintedPart";
+            if (tintPrintedPart && printMaterial)
+                foreach (var r in go.GetComponentsInChildren<Renderer>()) r.sharedMaterial = printMaterial;
 
             printedObject = go.transform;
+            partFullScale = printedObject.localScale;
             printedObject.SetParent(bed, false);
+            printedObject.localRotation = Quaternion.identity;
             // centre of the circle = where the nozzle is above the bed in the home position
             Vector3 centre = headRest - bedRest;
             printedObject.localPosition = new Vector3(centre.x, 0f, centre.z);
-            printedObject.localRotation = Quaternion.identity;
+
+            // measure the part at full size (in bed space) -> layer height and nozzle circle
+            Bounds b = LocalBounds(printedObject, bed);
+            partBottom = b.min.y;
+            partHeight = Mathf.Max(0.005f, b.size.y);
+            partRadius = Mathf.Max(0.005f, 0.5f * Mathf.Min(b.size.x, b.size.z));
+
+            printedPart = go.GetComponent<PrintedPart>();
+            if (!printedPart && printedPartPrefab) printedPart = go.AddComponent<PrintedPart>();
+            if (printedPart)
+            {
+                printedPart.SetPrinting();
+                printedPart.TakenFromPrinter += OnPartTaken;
+            }
             UpdatePrintedObject();
         }
 
         void UpdatePrintedObject()
         {
-            if (!printedObject) return;
-            // Unity's cylinder primitive is 2 units high and 1 unit wide, pivot in the middle
-            float h = Progress * printHeight;
-            printedObject.gameObject.SetActive(h > 0.0005f);
-            printedObject.localScale = new Vector3(2f * printRadius, h * 0.5f, 2f * printRadius);
-            Vector3 p = printedObject.localPosition;
-            printedObject.localPosition = new Vector3(p.x, h * 0.5f, p.z);
+            if (!printedObject || State == PrinterState.Finished || State == PrinterState.Idle) return;
+            // grow along y; keep the bottom on the bed surface
+            float p = Progress;
+            printedObject.gameObject.SetActive(p > 0.01f);
+            printedObject.localScale = new Vector3(partFullScale.x, partFullScale.y * Mathf.Max(p, 0.001f), partFullScale.z);
+            Vector3 pos = printedObject.localPosition;
+            printedObject.localPosition = new Vector3(pos.x, -partBottom * p, pos.z);
+        }
+
+        /// <summary>Removes the part of the previous job if nobody took it (the bed must be empty).</summary>
+        void RemovePartFromBed()
+        {
+            if (printedObject && (!printedPart || !printedPart.TakenFromBed))
+                Destroy(printedObject.gameObject);
+            printedObject = null;
+            printedPart = null;
+        }
+
+        void OnPartTaken(PrintedPart part)
+        {
+            part.TakenFromPrinter -= OnPartTaken;
+            if (part == printedPart) { printedObject = null; printedPart = null; }
+            partsInRoom.Add(part);
+            while (partsInRoom.Count > maxPartsInRoom)
+            {
+                if (partsInRoom[0]) Destroy(partsInRoom[0].gameObject);
+                partsInRoom.RemoveAt(0);
+            }
+        }
+
+        /// <summary>Combined renderer bounds of <paramref name="root"/> in the local space of <paramref name="space"/>.</summary>
+        static Bounds LocalBounds(Transform root, Transform space)
+        {
+            var renderers = root.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return new Bounds(Vector3.zero, Vector3.one * 0.05f);
+            Bounds result = default;
+            bool first = true;
+            foreach (var r in renderers)
+            {
+                Bounds wb = r.bounds;
+                for (int i = 0; i < 8; i++)
+                {
+                    Vector3 corner = wb.center + Vector3.Scale(wb.extents,
+                        new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+                    Vector3 local = space.InverseTransformPoint(corner);
+                    if (first) { result = new Bounds(local, Vector3.zero); first = false; }
+                    else result.Encapsulate(local);
+                }
+            }
+            // relative to the part's pivot
+            result.center -= space.InverseTransformPoint(root.position);
+            return result;
         }
 
         void SetState(PrinterState s)

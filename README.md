@@ -4,10 +4,10 @@ Mixed Reality Praktikum – Assignment 1 (Passthrough, wall-anchored board, inte
 
 | Task | Status |
 |------|--------|
-| 01 Passthrough enabled | ⬜ |
-| 02 Wall board (MRUK key wall) with name + description | ⬜ |
-| 03 Imported machine model placed in the room | ⬜ |
-| 04 Interaction with the machine | ⬜ |
+| 01 Passthrough enabled | ✅ |
+| 02 Wall board (MRUK key wall) with name + description | ✅ |
+| 03 Imported machine model placed in the room | ✅ |
+| 04 Interaction with the machine | ✅ |
 
 ## Requirements
 
@@ -48,7 +48,8 @@ git lfs pull   # only needed if LFS was installed after cloning
 | `[BuildingBlock] MR Utility Kit` | MRUK loads the room model from Space Setup (walls, floor, furniture) |
 | `WallSign` | `WallSign` + `WallSignPlacer` – information board on the key wall |
 | `[BuildingBlock] Interactions Rig` | Interaction SDK interactors (poke, grab, ray) for hands and controllers |
-| `Printer3D` | the printer model + `PrinterController`, `PrinterPlacer`, `PrinterButton`, `PrinterFeedback` |
+| `Printer3D` | the printer model + `PrinterController`, `PrinterPlacer`, `PrinterButton`, `PrinterFeedback`, `PrinterColliders` |
+| `[BuildingBlock] Effect Mesh` | invisible colliders for the real room (walls, floor, furniture) so released parts land on them |
 
 ### Wall sign (`Assets/Scripts/Sign/`)
 
@@ -69,6 +70,17 @@ git lfs pull   # only needed if LFS was installed after cloning
 | `PrinterPlacer` | After MRUK loaded the room: on the largest table if big enough (facing the user), else on a virtual stand in front of the key wall beside the sign, else in front of the user |
 | `PrinterButton` | Spawns the Interaction SDK sample poke button next to the printer; *Select* on its `PokeInteractable` toggles the print; label shows the next action; controller vibration |
 | `PrinterFeedback` | Status light (blue ready, pulsing green printing, blinking amber paused, white done), text on the printer display, spatial motor hum + beeps + chime, status line on the wall sign |
+
+### Picking up the printed part
+
+- `Assets/Prefabs/PrintedPart.prefab` was set up with the Interaction SDK Quick Action
+  *Add Grab Interaction* (Rigidbody, collider, `Grabbable`, hand + controller grab interactables).
+- `PrintedPart` disables grabbing while the part is being printed and enables it when the print is done.
+  On release the part is detached from the bed; `Grabbable.ForceKinematicDisabled` turns it into a
+  physics object, so it falls or can be thrown and lands on the room's Effect Mesh colliders.
+- `PrinterController` measures the prefab's size (layer height + nozzle circle), grows it with its
+  bottom on the bed, clears untouched parts on the next print and keeps up to 5 taken parts in the room.
+- `PrinterColliders` adds a MeshCollider to the frame and a BoxCollider to the bed, so parts can be put back.
 
 Sounds are synthesised by `Tools/Audio/generate_sounds.py` (no third-party audio).
 Materials in `Assets/Materials` are derived from URP's `Lit.mat`; emission is enabled in the asset
