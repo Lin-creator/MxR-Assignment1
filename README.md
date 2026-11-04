@@ -24,7 +24,7 @@ Die App zeigt den echten Raum im Passthrough und ergänzt ihn um einen virtuelle
   es „atmet“ (pulsierendes Leuchten), solange es auf eine Eingabe wartet.
 - **Modellauswahl:** Fünf Modelle (Würfel, Zahnrad, gedrehter Turm, Schachbauer, Vase) stehen als halbtransparente
   „Geister“ auf dem Druckbett – das gewählte in der Mitte, das vorherige links und das nächste rechts, kleiner und
-  noch blasser. Die Pfeile `<` `>` am linken/rechten Display-Rand blättern, die Vorschauen gleiten an ihren neuen Platz.
+  noch blasser. Mit dem Finger (oder der Controller-Spitze) wischt man seitlich über die Vorschauen: sie leuchten auf, folgen dem Finger und rasten beim Loslassen auf dem gewählten Modell ein.
   Ein Druck dauert je nach Modell 5–10 Sekunden; der Geist bleibt als Umriss stehen, in den das Teil hineinwächst.
   Druckkopf, Bett und Portal fahren dabei realistisch, und auf dem Bett wächst Schicht für Schicht ein Bauteil.
   Feedback gibt es über das aufleuchtende Display, eine Statusleuchte, Text und Hinweise auf dem Display, Motorgeräusch, Pieptöne,
@@ -134,7 +134,7 @@ git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 
 | Aktion | Hand | Controller |
 |--------|------|------------|
-| Modell wählen | linken / rechten Rand des Displays (`<` `>`) antippen | ebenso mit der Controller-Spitze |
+| Modell wählen | mit dem Zeigefinger seitlich über die Vorschauen auf dem Druckbett wischen | ebenso mit der Controller-Spitze |
 | Druck starten / pausieren / fortsetzen | Mitte des Displays antippen | ebenso mit der Controller-Spitze |
 | Fertiges Bauteil nehmen | greifen | Grip-Taste |
 | Schild / Drucker verschieben | mit dem Strahl zielen, Pinch halten | zielen, Trigger halten; Stick vor/zurück = weiter weg / näher |
@@ -169,8 +169,9 @@ git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 |------------|---------|
 | `PrinterController` | Simulierter Druckauftrag: bewegt Portal (Z), Druckkopf (X) und Bett (Y) prozedural, sodass die Düse Kreise zeichnet, während das Bauteil Schicht für Schicht wächst. API: `TogglePrint()`, `CancelPrint()`, `onStateChanged` (Idle → Printing ⇄ Paused → Finished) |
 | `PrinterPlacer` | Nach dem Laden des Raums: auf dem größten Tisch, falls groß genug (zum Nutzer gedreht), sonst auf einem virtuellen Podest (0,6 × 0,55 m, 0,75 m hoch) vor der Key Wall neben dem Schild, sonst vor dem Nutzer |
-| `PrinterTouchscreen` | Macht das Display zum Touchscreen: Der Poke-Button des Interaction SDK wird unsichtbar auf die Display-Oberfläche gesetzt (Position `DisplayAnchor`, Ausrichtung entlang der Bildschirmnormalen, auf Zonengröße skaliert) – drei Zonen: `<` vorheriges Modell, Mitte Druck starten/pausieren, `>` nächstes Modell (während des Drucks pausiert jede Zone). Feedback: das Display pulsiert, solange es auf eine Eingabe wartet, leuchtet beim Annähern heller und blitzt beim Antippen (Emission des Display-Materials), Klick-Sound, Vibration |
-| `PrintModelSelector` | Fünf Modelle (Mesh aus `PrintModels.fbx`, Druckzeit 5–10 s) als transparente, sich drehende Geister auf dem Bett (Material `PrintGhost`, Alpha per `MaterialPropertyBlock`): Auswahl in der Mitte, vorheriges links / nächstes rechts kleiner und blasser; beim Blättern gleiten sie an den neuen Platz. Setzt den Auftrag per `PrinterController.SetJob` – das Bauteil-Prefab bekommt das Mesh und einen konvexen `MeshCollider` |
+| `PrinterTouchscreen` | Macht das Display zum Touchscreen: Der Poke-Button des Interaction SDK wird unsichtbar auf die Display-Oberfläche gesetzt (Position `DisplayAnchor`, Ausrichtung entlang der Bildschirmnormalen – aus den Bildschirmflächen des FBX gemessen mit `Tools/Blender/measure_screen.py` –, auf Bildschirmgröße skaliert); Antippen startet / pausiert / setzt fort. Feedback: das Display pulsiert, solange es auf eine Eingabe wartet, leuchtet beim Annähern heller und blitzt beim Antippen (Emission des Display-Materials), Klick-Sound, Vibration |
+| `PrintModelSelector` | Fünf Modelle (Mesh aus `PrintModels.fbx`, Druckzeit 5–10 s) als transparente, sich drehende Geister auf dem Bett (Material `PrintGhost`, Alpha per `MaterialPropertyBlock`): Auswahl in der Mitte, vorheriges links / nächstes rechts kleiner und blasser; beim Wischen folgen sie dem Finger und rasten danach ein; ausgeblendet, solange ein fertiges Teil auf dem Bett liegt. Setzt den Auftrag per `PrinterController.SetJob` – das Bauteil-Prefab bekommt das Mesh und einen konvexen `MeshCollider` |
+| `PreviewSwipe` | Nutzt die Poke-Interaktoren des Interaction SDK (Zeigefingerspitze bzw. Controller-Spitze) als Finger: In einer Box um die Vorschauen leuchten diese auf, seitliches Bewegen zieht das Karussell mit, nach einer halben Vorschau-Breite ist das nächste/vorherige Modell gewählt (Klick-Sound, Vibration) |
 | `GrabHint` | Schwebendes Schild „Grab me!“ mit Pfeil über dem fertigen Teil, zum Nutzer gedreht; verschwindet, sobald das Teil gegriffen wird |
 | `PrinterFeedback` | Statusleuchte (blau bereit, grün pulsierend druckt, gelb blinkend pausiert, weiß fertig), Text auf dem Display mit Hinweis, was Antippen als Nächstes bewirkt, räumliches Motorgeräusch + Pieptöne + Gong, Statuszeile am Schild |
 | `PrintedPart` + `Prefabs/PrintedPart.prefab` | Bauteil mit Rigidbody, Collider, `Grabbable`, Hand- und Controller-Grab (Quick Action *Add Grab Interaction*). Während des Drucks nicht greifbar; danach wird es beim Loslassen vom Bett gelöst und per `Grabbable.ForceKinematicDisabled` zum Physikobjekt. Bis zu 5 entnommene Teile bleiben im Raum |
