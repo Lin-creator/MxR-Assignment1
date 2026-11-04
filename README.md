@@ -96,6 +96,20 @@ as handle, a `ColliderSurface` and a `RayInteractable`. Feedback: the object lig
 blue while it is dragged (`HoverTint`), pick-up/drop sounds, controller vibration, and a short tick when the
 sign changes walls or the printer changes surface.
 
+### Changing rooms (`Assets/Scripts/Room/`)
+
+MRUK loads the room model once at startup. If the user walks into another space (other boundary),
+the old room can no longer be located and the content would stay at the old coordinates.
+
+| Component | Role |
+|-----------|------|
+| `RoomManager` | Reloads the room (`MRUK.LoadSceneFromDevice`) when the app regains focus or the view is recentred – the Quest pauses the app for its boundary prompt. If the user is in a **different room** (other room UUID), the Effect Mesh colliders are rebuilt, taken parts removed and the sign and printer placed again; otherwise nothing moves, so the user's repositioning is kept |
+| `WristMenu` | Raise the left hand/controller into view: a panel appears above it with the room status and two poke buttons – **Re-place** (reload and place sign + printer again) and **Scan room** (`OVRScene.RequestSpaceSetup`, then reload). Left controller menu button (≡) = Re-place |
+
+MRUK's *Data Source* is set to **Device**: without Space Setup data the content is placed in front of
+the user instead of on a random sample room (*Device With Prefab Fallback*). In the Editor (no headset
+room data) the fallback placement is used.
+
 Sounds are synthesised by `Tools/Audio/generate_sounds.py` (no third-party audio).
 Materials in `Assets/Materials` are derived from URP's `Lit.mat`; emission is enabled in the asset
 so the emissive shader variant is included in the Quest build.
