@@ -43,7 +43,7 @@ namespace MxR.Printer
         /// <summary>The virtual stand (null until it is needed).</summary>
         public Transform Stand => stand;
         public bool UsesStand => stand && stand.gameObject.activeSelf;
-        /// <summary>Raised once the printer has been placed.</summary>
+        /// <summary>Raised every time the printer has been (re)placed.</summary>
         public event Action Placed;
 
         float startTime;
@@ -71,10 +71,19 @@ namespace MxR.Printer
                 PlaceInFrontOfUser();
         }
 
+        // MRUK raises this after every scene load; only the first one places the printer,
+        // later reloads are handled by RoomManager (so a reload does not undo the user's repositioning)
         void OnSceneLoaded()
         {
-            if (IsPlaced) return;
-            MRUKRoom room = MRUK.Instance.GetCurrentRoom();
+            if (!IsPlaced) PlaceInCurrentRoom();
+        }
+
+        /// <summary>Places the printer again in the room the user is in now (e.g. after a room change).</summary>
+        public void PlaceAgain() => PlaceInCurrentRoom();
+
+        void PlaceInCurrentRoom()
+        {
+            MRUKRoom room = MRUK.Instance ? MRUK.Instance.GetCurrentRoom() : null;
             if (room == null) { PlaceInFrontOfUser(); return; }
 
             if (preferTable)
@@ -88,6 +97,7 @@ namespace MxR.Printer
                     {
                         // table top plane: position = centre of the top surface
                         Vector3 top = table.transform.position;
+                        SetStandVisible(false);
                         Finish(top, FacingUser(top), $"on table '{table.name}' ({size.x:0.00} x {size.y:0.00} m)");
                         return;
                     }

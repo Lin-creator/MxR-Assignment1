@@ -1,3 +1,4 @@
+using System;
 using Meta.XR.MRUtilityKit;
 using UnityEngine;
 
@@ -27,6 +28,8 @@ namespace MxR.Sign
         /// <summary>The wall the sign is attached to (null when using the fallback).</summary>
         public MRUKAnchor Wall { get; private set; }
         public bool IsPlaced { get; private set; }
+        /// <summary>Raised every time the sign has been (re)placed.</summary>
+        public event Action Placed;
 
         WallSign sign;
         float startTime;
@@ -53,9 +56,19 @@ namespace MxR.Sign
                 PlaceInFrontOfUser();
         }
 
+        // MRUK raises this after every scene load; only the first one places the sign,
+        // later reloads are handled by RoomManager (so a reload does not undo the user's repositioning)
         void OnSceneLoaded()
         {
-            MRUKRoom room = MRUK.Instance.GetCurrentRoom();
+            if (!IsPlaced) PlaceInCurrentRoom();
+        }
+
+        /// <summary>Places the sign again in the room the user is in now (e.g. after a room change).</summary>
+        public void PlaceAgain() => PlaceInCurrentRoom();
+
+        void PlaceInCurrentRoom()
+        {
+            MRUKRoom room = MRUK.Instance ? MRUK.Instance.GetCurrentRoom() : null;
             Vector2 wallSize = Vector2.zero;
             MRUKAnchor keyWall = room != null ? room.GetKeyWall(out wallSize) : null;
             if (keyWall == null)
@@ -106,6 +119,7 @@ namespace MxR.Sign
             if (fwd.sqrMagnitude < 0.01f) fwd = Vector3.forward;
 
             transform.SetPositionAndRotation(eye + fwd * fallbackDistance, Quaternion.LookRotation(fwd, Vector3.up));
+            Wall = null;
             Finish("in front of the user (fallback)");
         }
 
@@ -115,6 +129,7 @@ namespace MxR.Sign
             SetVisible(true);
             enabled = false;   // stop the timeout check
             Debug.Log($"[WallSignPlacer] Sign placed {where}.");
+            Placed?.Invoke();
         }
 
         void SetVisible(bool visible)
