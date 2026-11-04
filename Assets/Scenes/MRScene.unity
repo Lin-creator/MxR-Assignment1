@@ -1711,6 +1711,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 671b39c08061c3b93bce0017fb01956d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2047656968}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 671b39c08061c3b93bce0017fb01956d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2047656969}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 671b39c08061c3b93bce0017fb01956d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2047656970}
   m_SourcePrefab: {fileID: 100100000, guid: 671b39c08061c3b93bce0017fb01956d, type: 3}
 --- !u!1 &1988479250 stripped
 GameObject:
@@ -2062,3 +2068,62 @@ MonoBehaviour:
   maxHandDistance: 0.75
   showDelay: 0.35
   popTime: 0.15
+--- !u!114 &2047656969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1988479250}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b5c9bd814ba40e0ad3ed4e3410db672, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MxR.Printer.PrintModelSelector
+  modelLibrary: {fileID: 919132149155446097, guid: 5d463f2c128f4bbd84a931b2a3902ab6, type: 3}
+  ghostMaterial: {fileID: 2100000, guid: add7ce61ec404113b63a50dc2de4e863, type: 2}
+  models:
+  - displayName: Cube
+    meshName: Cube
+    printSeconds: 5
+  - displayName: Gear
+    meshName: Gear
+    printSeconds: 6
+  - displayName: Twisted tower
+    meshName: Tower
+    printSeconds: 8
+  - displayName: Chess pawn
+    meshName: Pawn
+    printSeconds: 9
+  - displayName: Vase
+    meshName: Vase
+    printSeconds: 10
+  ghostColor: {r: 0.55, g: 0.85, b: 1, a: 1}
+  selectedAlpha: 0.4
+  sideAlpha: 0.14
+  printingAlpha: 0.12
+  sideScale: 0.7
+  spacing: 0
+  turnSpeed: 35
+  slideSpeed: 6
+  fadeSpeed: 4
+--- !u!114 &2047656970
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1988479250}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86290674186341cdaf10413f374d0496, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MxR.Printer.GrabHint
+  backgroundMaterial: {fileID: 2100000, guid: 949f24bf9d244e13a36bdd883e232d93, type: 2}
+  title: Grab me!
+  subtitle: pinch or grip button
+  titleColor: {r: 0.92, g: 0.95, b: 1, a: 1}
+  subtitleColor: {r: 0.45, g: 0.75, b: 1, a: 1}
+  heightAbovePart: 0.035
+  bobAmplitude: 0.005
+  popTime: 0.2
