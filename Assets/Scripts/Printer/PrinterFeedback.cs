@@ -52,6 +52,8 @@ namespace MxR.Printer
         int shownPercent = -1;
         State shownState;
         bool shownEngaged;
+        string shownModel;
+        bool shownPartOnBed;
 
 #if UNITY_EDITOR
         void Reset()
@@ -149,8 +151,10 @@ namespace MxR.Printer
             if (!anchor) { Debug.LogWarning("[PrinterFeedback] DisplayAnchor not found.", this); return; }
 
             Vector3 n = screenNormal.normalized;
+            // with a model selector the screen edges show the < > arrows, so keep the text in the middle
+            Vector2 size = GetComponent<PrintModelSelector>() ? new Vector2(screenSize.x - 0.024f, screenSize.y) : screenSize;
             display = TextFactory.CreateAutoSized("DisplayText", transform, anchor.localPosition + n * 0.001f,
-                screenSize, 0.04f, 0.14f, TextAlignmentOptions.Center, displayTextColor, FontStyles.Normal, font);
+                size, 0.04f, 0.14f, TextAlignmentOptions.Center, displayTextColor, FontStyles.Normal, font);
             // text faces -Z, so its forward must point into the screen
             display.transform.localRotation = Quaternion.LookRotation(-n, Vector3.up);
         }
@@ -159,7 +163,11 @@ namespace MxR.Printer
         {
             int percent = Mathf.FloorToInt(printer.Progress * 100f);
             bool engaged = printer.Engage >= 1f;
-            if (!force && percent == shownPercent && printer.State == shownState && engaged == shownEngaged) return;
+            string model = printer.JobName;
+            if (!force && percent == shownPercent && printer.State == shownState && engaged == shownEngaged
+                && model == shownModel && printer.HasPartOnBed == shownPartOnBed) return;
+            shownModel = model;
+            shownPartOnBed = printer.HasPartOnBed;
             shownPercent = percent;
             shownState = printer.State;
             shownEngaged = engaged;
@@ -174,28 +182,39 @@ namespace MxR.Printer
                     break;
                 case State.Printing:
                     screen = $"<b>PRINTING</b>\n{percent}%  <size=60%>{time} left</size>\n<size=45%>tap to pause</size>";
-                    sign = $"Status: printing {percent}% ({time} left)";
+                    sign = $"Status: printing {Named(model)}{percent}% ({time} left)";
                     break;
                 case State.Paused:
                     screen = $"<b>PAUSED</b>\n{percent}%\n<size=45%>tap to resume</size>";
                     sign = $"Status: paused at {percent}%";
                     break;
-                case State.Finished when printer.PrintsGrabbableParts:
-                    screen = "<b>DONE</b>\n<size=60%>take your part</size>\n<size=45%>tap to print again</size>";
-                    sign = "Status: print finished - pick up your part!";
+                case State.Finished when printer.PrintsGrabbableParts && printer.HasPartOnBed:
+                    screen = $"<b>DONE</b>\n<size=60%>grab your part</size>\n<size=45%>tap: print {Short(model)}</size>";
+                    sign = $"Status: {Named(model)}finished - grab it from the bed!";
+                    break;
+                case State.Finished when !string.IsNullOrEmpty(model):
+                    screen = $"<b>{model.ToUpperInvariant()}</b>\n<size=45%>tap to print</size>";
+                    sign = "Status: choose a model with < > on the printer display, tap the middle to print";
                     break;
                 case State.Finished:
                     screen = "<b>DONE</b>\n<size=60%>print finished</size>\n<size=45%>tap to print again</size>";
                     sign = "Status: print finished";
                     break;
                 default:
-                    screen = "<b>READY</b>\n<size=60%>tap to print</size>";
-                    sign = "Status: ready - tap the printer's display to print";
+                    screen = string.IsNullOrEmpty(model)
+                        ? "<b>READY</b>\n<size=60%>tap to print</size>"
+                        : $"<b>{model.ToUpperInvariant()}</b>\n<size=45%>tap to print</size>";
+                    sign = string.IsNullOrEmpty(model)
+                        ? "Status: ready - tap the printer's display to print"
+                        : "Status: choose a model with < > on the printer display, tap the middle to print";
                     break;
             }
             if (display) display.text = screen;
             if (wallSign) wallSign.SetStatus(sign);
         }
+
+        static string Named(string model) => string.IsNullOrEmpty(model) ? "" : model + " ";
+        static string Short(string model) => string.IsNullOrEmpty(model) ? "again" : model.ToLowerInvariant();
 
         static string FormatTime(float seconds)
         {
