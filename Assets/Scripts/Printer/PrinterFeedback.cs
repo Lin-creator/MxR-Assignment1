@@ -191,8 +191,8 @@ namespace MxR.Printer
                     sign = $"Status: {Named(model)}finished - grab it from the bed!";
                     break;
                 case State.Finished when !string.IsNullOrEmpty(model):
-                    screen = $"<b>{model.ToUpperInvariant()}</b>\n<size=45%>tap to print</size>";
-                    sign = "Status: choose a model with < > on the printer display, tap the middle to print";
+                    screen = $"<b>{model.ToUpperInvariant()}</b>\n<size=40%>swipe the models · tap to print</size>";
+                    sign = "Status: swipe over the previews on the bed to choose a model, tap the display to print";
                     break;
                 case State.Finished:
                     screen = "<b>DONE</b>\n<size=60%>print finished</size>\n<size=45%>tap to print again</size>";
@@ -201,10 +201,10 @@ namespace MxR.Printer
                 default:
                     screen = string.IsNullOrEmpty(model)
                         ? "<b>READY</b>\n<size=60%>tap to print</size>"
-                        : $"<b>{model.ToUpperInvariant()}</b>\n<size=45%>tap to print</size>";
+                        : $"<b>{model.ToUpperInvariant()}</b>\n<size=40%>swipe the models · tap to print</size>";
                     sign = string.IsNullOrEmpty(model)
                         ? "Status: ready - tap the printer's display to print"
-                        : "Status: choose a model with < > on the printer display, tap the middle to print";
+                        : "Status: swipe over the previews on the bed to choose a model, tap the display to print";
                     break;
             }
             if (display) display.text = screen;
