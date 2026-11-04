@@ -40,7 +40,8 @@ namespace MxR.Common
                 if (r is ParticleSystemRenderer || r.GetComponent<TMPro.TMP_Text>()) continue;   // keep text crisp
                 var mats = r.sharedMaterials;
                 for (int i = 0; i < mats.Length; i++)
-                    if (mats[i] && mats[i].HasProperty(BaseColor))
+                    // skip transparent materials (e.g. model previews): they set their own alpha per renderer
+                    if (mats[i] && mats[i].HasProperty(BaseColor) && mats[i].renderQueue < 3000)
                         slots.Add(new Slot { renderer = r, index = i, material = mats[i] });
             }
         }
