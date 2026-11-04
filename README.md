@@ -39,6 +39,26 @@ git lfs pull   # only needed if LFS was installed after cloning
 2. *File → Build Profiles →* select **Android**, then *Switch Platform*.
 3. Pick the Quest under *Run Device*, then **Build And Run**.
 
+## Scene overview (`Assets/Scenes/MRScene.unity`)
+
+| Object | Purpose |
+|--------|---------|
+| `[BuildingBlock] Camera Rig` | OVRCameraRig (head + controller tracking). OVRManager: passthrough + scene support required, target devices Quest 2/3/3S |
+| `[BuildingBlock] Passthrough` | OVRPassthroughLayer as underlay; the camera clears to transparent black so the real room is visible |
+| `[BuildingBlock] MR Utility Kit` | MRUK loads the room model from Space Setup (walls, floor, furniture) |
+| `WallSign` | `WallSign` + `WallSignPlacer` – information board on the key wall |
+
+### Wall sign (`Assets/Scripts/Sign/`)
+
+- `WallSign` builds the board from code: dark backboard, blue accent bars and TextMeshPro texts
+  (title, author name, description, live status line). All texts are editable in the Inspector.
+- `WallSignPlacer` waits for MRUK's *scene loaded* callback, picks the room's **key wall**
+  (`MRUKRoom.GetKeyWall` – the longest wall with no other wall behind it) and centres the board on it
+  1.5 m above the floor, 1 cm in front of the wall, facing into the room.
+  Without room data (no Space Setup / permission denied) the board is placed 2 m in front of the user.
+- On Quest 2 the room must be set up manually (*Settings → Physical Space → Space Setup*);
+  Quest 3 scans it automatically.
+
 ## Repository layout
 
 ```
