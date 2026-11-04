@@ -56,12 +56,20 @@ namespace MxR.Printer
         {
             draggable.DragStarted += OnDragStarted;
             draggable.Dragging += OnDragging;
+            placer.Placed += OnPlaced;
         }
 
         void OnDisable()
         {
             draggable.DragStarted -= OnDragStarted;
             draggable.Dragging -= OnDragging;
+            placer.Placed -= OnPlaced;
+        }
+
+        // placed again (e.g. in a new room): the stand may have appeared or disappeared
+        void OnPlaced()
+        {
+            if (ready) UpdateHandle();
         }
 
         void Update()

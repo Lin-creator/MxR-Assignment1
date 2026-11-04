@@ -1799,6 +1799,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3613868102660323786, guid: c2e00db6d2dfa42ac8d821db8d493a44, type: 3}
+      propertyPath: SceneSettings.DataSource
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1925,6 +1929,7 @@ SceneRoots:
   - {fileID: 1988479249}
   - {fileID: 1811274046}
   - {fileID: 813407619}
+  - {fileID: 900000002}
 --- !u!114 &591615347
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1987,3 +1992,78 @@ MonoBehaviour:
   minDistance: 0.3
   maxDistance: 5
   faceUser: 1
+--- !u!1 &900000001
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 900000002}
+  - component: {fileID: 900000003}
+  - component: {fileID: 900000004}
+  m_Layer: 0
+  m_Name: RoomManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &900000002
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000001}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &900000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c99b8d58b7c4f498572fa34ee3e45d3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MxR.Room.RoomManager
+  sign: {fileID: 591615344}
+  printer: {fileID: 1740714897}
+  effectMesh: {fileID: 813407617}
+  autoReplaceOnRoomChange: 1
+  focusDelay: 1.5
+  menuButtonReplaces: 1
+--- !u!114 &900000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7237eb82a9c545129a65f1007a6d70db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MxR.Room.WristMenu
+  buttonPrefab: {fileID: 4171210596153234762, guid: 323cb65d2594c79499a11a99ff0fb347, type: 3}
+  panelMaterial: {fileID: 2100000, guid: 949f24bf9d244e13a36bdd883e232d93, type: 2}
+  textColor: {r: 0.92, g: 0.95, b: 1, a: 1}
+  accentTextColor: {r: 0.45, g: 0.75, b: 1, a: 1}
+  heightAboveHand: 0.13
+  panelSize: {x: 0.17, y: 0.17}
+  buttonScale: 0.8
+  showAngle: 25
+  hideAngle: 42
+  maxHandDistance: 0.75
+  showDelay: 0.35
+  popTime: 0.15

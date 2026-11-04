@@ -262,6 +262,13 @@ namespace MxR.Printer
             printedObject.localPosition = new Vector3(pos.x, -partBottom * p, pos.z);
         }
 
+        /// <summary>Removes all parts the user took from the printer (e.g. when the room changed and they would float).</summary>
+        public void ClearPartsInRoom()
+        {
+            foreach (var part in partsInRoom) if (part) Destroy(part.gameObject);
+            partsInRoom.Clear();
+        }
+
         /// <summary>Removes the part of the previous job if nobody took it (the bed must be empty).</summary>
         void RemovePartFromBed()
         {

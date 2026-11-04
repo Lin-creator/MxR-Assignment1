@@ -48,13 +48,17 @@ namespace MxR.Sign
         {
             draggable.DragStarted += OnDragStarted;
             draggable.Dragging += OnDragging;
+            placer.Placed += OnPlaced;
         }
 
         void OnDisable()
         {
             draggable.DragStarted -= OnDragStarted;
             draggable.Dragging -= OnDragging;
+            placer.Placed -= OnPlaced;
         }
+
+        void OnPlaced() => wall = placer.Wall;   // placed again, e.g. in a new room
 
         void Update()
         {
