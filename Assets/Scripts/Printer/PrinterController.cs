@@ -30,8 +30,8 @@ namespace MxR.Printer
         [SerializeField] Transform filamentTube;
 
         [Header("Print job")]
-        [Tooltip("Seconds for a complete print.")]
-        [SerializeField, Min(1f)] float printDuration = 30f;
+        [Tooltip("Seconds for a complete print (default; a selected model brings its own time).")]
+        [SerializeField, Min(1f)] float printDuration = 7f;
         [Tooltip("Height of the printed object in metres.")]
         [SerializeField, Min(0.005f)] float printHeight = 0.05f;
         [Tooltip("Radius of the printed object in metres.")]
@@ -39,7 +39,7 @@ namespace MxR.Printer
         [Tooltip("How many circles the nozzle draws per second.")]
         [SerializeField, Min(0.1f)] float lapsPerSecond = 1f;
         [Tooltip("Seconds to move from the home position to the bed and back.")]
-        [SerializeField, Min(0.1f)] float travelTime = 1.5f;
+        [SerializeField, Min(0.1f)] float travelTime = 1f;
         [Tooltip("Material of the printed object. Empty = use the filament tube's material.")]
         [SerializeField] Material printMaterial;
 
@@ -65,7 +65,19 @@ namespace MxR.Printer
         /// <summary>0 = axes at home position, 1 = nozzle at the bed (printing pose).</summary>
         public float Engage => engage;
         /// <summary>Seconds until the current job is finished (only meaningful while printing/paused).</summary>
-        public float RemainingSeconds => (1f - Progress) * printDuration;
+        public float RemainingSeconds =>
+            (1f - Progress) * (State == PrinterState.Printing || State == PrinterState.Paused ? activeDuration : JobDuration);
+        /// <summary>Print time of the selected job (s).</summary>
+        public float JobDuration => jobDuration > 0f ? jobDuration : printDuration;
+        /// <summary>Name of the selected model (empty = default part).</summary>
+        public string JobName { get; private set; } = "";
+        /// <summary>The bed transform; printed parts and previews are its children.</summary>
+        public Transform Bed => bed;
+        /// <summary>Where parts are printed, in the bed's local space (below the nozzle's home position).</summary>
+        public Vector3 PrintCentreOnBed { get { Vector3 c = headRest - bedRest; return new Vector3(c.x, 0f, c.z); } }
+        /// <summary>The part of the last job while it still sits on the bed (null if none or taken).</summary>
+        public PrintedPart PartOnBed => printedObject ? printedPart : null;
+        public bool HasPartOnBed => printedObject != null;
         /// <summary>True if finished parts can be picked up (a grabbable part prefab is assigned).</summary>
         public bool PrintsGrabbableParts => printedPartPrefab != null;
 
@@ -76,6 +88,7 @@ namespace MxR.Printer
         float tubeRestSpanX;    // x distance from the tube's fixed end to the print head
 
         float engage;           // 0 = home position, 1 = at the bed and printing
+        float activeDuration = 7f;  // duration of the running job
         float angle;            // current angle of the nozzle circle (radians)
 
         // part of the current/last job while it is still on the bed
@@ -85,6 +98,10 @@ namespace MxR.Printer
         float partBottom;       // local y of the part's bottom (relative to its pivot) at 100 %
         float partHeight, partRadius;
         readonly List<PrintedPart> partsInRoom = new List<PrintedPart>();
+
+        // selected job (set by PrintModelSelector)
+        Mesh jobMesh;
+        float jobDuration;
 
         void Reset() => FindParts();
 
@@ -122,6 +139,17 @@ namespace MxR.Printer
 
         // ---------- public API (used by buttons / interaction) ----------
 
+        /// <summary>
+        /// Selects what the next print makes: the printed part prefab gets this mesh (pivot at its bottom)
+        /// and the job takes <paramref name="seconds"/>. Does not affect a running print.
+        /// </summary>
+        public void SetJob(Mesh mesh, float seconds, string displayName)
+        {
+            jobMesh = mesh;
+            jobDuration = seconds;
+            JobName = displayName ?? "";
+        }
+
         /// <summary>Idle/Finished -> start new print, Printing -> pause, Paused -> resume.</summary>
         [ContextMenu("Toggle print")]
         public void TogglePrint()
@@ -140,6 +168,7 @@ namespace MxR.Printer
             RemovePartFromBed();
             Progress = 0f;
             angle = 0f;
+            activeDuration = JobDuration;          // a new selection does not change a running job
             CreatePrintedObject();
             SetState(PrinterState.Printing);
         }
@@ -163,7 +192,7 @@ namespace MxR.Printer
                 // only advance the job once the nozzle has reached the bed
                 if (engage >= 1f)
                 {
-                    Progress = Mathf.Min(1f, Progress + dt / printDuration);
+                    Progress = Mathf.Min(1f, Progress + dt / activeDuration);
                     angle += dt * lapsPerSecond * 2f * Mathf.PI;
                     if (Progress >= 1f)
                     {
@@ -223,7 +252,8 @@ namespace MxR.Printer
                 Destroy(go.GetComponent<Collider>());
                 go.transform.localScale = new Vector3(2f * printRadius, printHeight * 0.5f, 2f * printRadius);
             }
-            go.name = "PrintedPart";
+            go.name = string.IsNullOrEmpty(JobName) ? "PrintedPart" : $"PrintedPart ({JobName})";
+            if (jobMesh) ApplyJobMesh(go, jobMesh);
             if (tintPrintedPart && printMaterial)
                 foreach (var r in go.GetComponentsInChildren<Renderer>()) r.sharedMaterial = printMaterial;
 
@@ -249,6 +279,25 @@ namespace MxR.Printer
                 printedPart.TakenFromPrinter += OnPartTaken;
             }
             UpdatePrintedObject();
+        }
+
+        /// <summary>
+        /// Puts the selected model into the part: the first MeshFilter gets the mesh at its original size,
+        /// its colliders are replaced by a convex MeshCollider of the same shape (convex: needed for a
+        /// non-kinematic Rigidbody). Runs right after Instantiate, before the grab components' Start
+        /// collects the colliders.
+        /// </summary>
+        static void ApplyJobMesh(GameObject part, Mesh mesh)
+        {
+            var filter = part.GetComponentInChildren<MeshFilter>(true);
+            if (!filter) return;
+            filter.sharedMesh = mesh;
+            filter.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
+            filter.transform.localScale = Vector3.one;
+            foreach (var c in filter.GetComponents<Collider>()) DestroyImmediate(c);
+            var collider = filter.gameObject.AddComponent<MeshCollider>();
+            collider.sharedMesh = mesh;
+            collider.convex = true;
         }
 
         void UpdatePrintedObject()
