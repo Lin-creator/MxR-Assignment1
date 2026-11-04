@@ -85,7 +85,7 @@ The script groups the ~80 loose parts into the printer's moving assemblies, join
 | `Gantry` | Z axis (up/down) | centre of beam |
 | `PrintHead` | X axis on the gantry | nozzle tip |
 | `ZCable`, `FilamentTube` | stretched to follow gantry/head | fixed end |
-| `Display`, `DisplayAnchor` | static | centre of front screen |
+| `Display`, `DisplayAnchor` | static, screen has a soft blue emissive glow | centre of front screen |
 
 All parts are direct children of `Printer3D` (Blender's *Apply Transform* FBX option breaks nested
 children), so the controller script moves `PrintHead` together with `Gantry`.

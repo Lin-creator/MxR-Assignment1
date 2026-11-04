@@ -9,6 +9,7 @@ Usage (from repo root):
 - bakes transforms, scales to a real-world height of 0.45 m, puts the root pivot at floor centre
 - sets pivots: Bed = bed surface centre, PrintHead = nozzle tip, cables = their fixed end
 - flat hierarchy (all parts direct children of Printer3D)
+- gives the front screen a soft blue emissive glow
 - adds a DisplayAnchor empty at the centre of the front screen (position only)
 """
 import bpy, sys, os
@@ -38,6 +39,18 @@ to_out = Matrix.Scale(s, 4) @ Matrix.Translation(-root_pt)
 print(f"source bounds {mins} .. {maxs}, scale {s:.5f}")
 
 fallback = bpy.data.materials.get("White metal")
+
+# Screen backlight: dark glass with a soft blue glow. FBX carries EmissiveColor/EmissiveFactor,
+# URP's FBX importer maps them to _EmissionColor and enables the _EMISSION keyword
+# (which also keeps the emission shader variant in Quest builds).
+SCREEN_BASE = (0.02, 0.03, 0.05, 1.0)
+SCREEN_EMISSION = (0.25, 0.55, 1.0, 1.0)
+SCREEN_STRENGTH = 0.6
+screen = bpy.data.materials["Display"].node_tree.nodes["Principled BSDF"]
+screen.inputs["Base Color"].default_value = SCREEN_BASE
+screen.inputs["Emission Color"].default_value = SCREEN_EMISSION
+screen.inputs["Emission Strength"].default_value = SCREEN_STRENGTH
+screen.inputs["Roughness"].default_value = 0.1
 groups = {}
 for o in meshes:
     groups.setdefault(classify(o), []).append(o)       # classify in source space
