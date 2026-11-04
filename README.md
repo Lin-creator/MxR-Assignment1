@@ -20,11 +20,16 @@ Die App zeigt den echten Raum im Passthrough und ergänzt ihn um einen virtuelle
   einer Beschreibung, wie ein FDM-Drucker funktioniert, und einer Live-Statuszeile.
 - Der **3D-Drucker** steht auf dem größten Tisch im Raum oder, wenn es keinen passenden gibt, auf einem
   virtuellen Podest vor der Hauptwand neben dem Schild.
-- Das **Display des Druckers ist ein Touchscreen:** Antippen (Finger oder Controller) startet, pausiert und setzt einen Druck fort.
+- Das **Display des Druckers ist ein Touchscreen:** Antippen (Finger oder Controller) startet, pausiert und setzt einen Druck fort;
+  es „atmet“ (pulsierendes Leuchten), solange es auf eine Eingabe wartet.
+- **Modellauswahl:** Fünf Modelle (Würfel, Zahnrad, gedrehter Turm, Schachbauer, Vase) stehen als halbtransparente
+  „Geister“ auf dem Druckbett – das gewählte in der Mitte, das vorherige links und das nächste rechts, kleiner und
+  noch blasser. Die Pfeile `<` `>` am linken/rechten Display-Rand blättern, die Vorschauen gleiten an ihren neuen Platz.
+  Ein Druck dauert je nach Modell 5–10 Sekunden; der Geist bleibt als Umriss stehen, in den das Teil hineinwächst.
   Druckkopf, Bett und Portal fahren dabei realistisch, und auf dem Bett wächst Schicht für Schicht ein Bauteil.
   Feedback gibt es über das aufleuchtende Display, eine Statusleuchte, Text und Hinweise auf dem Display, Motorgeräusch, Pieptöne,
   einen Abschluss-Gong, Controller-Vibration und die Statuszeile am Schild.
-- Das **fertige Bauteil kann man greifen**, werfen oder ablegen; es fällt auf den echten Boden oder Tisch
+- Das **fertige Bauteil kann man greifen** – ein schwebender Hinweis „Grab me!“ zeigt darauf –, werfen oder ablegen; es fällt auf den echten Boden oder Tisch
   (unsichtbare Raum-Collider der *Effect Mesh*).
 - **Schild und Drucker lassen sich verschieben:** Mit dem Strahl (Controller-Trigger / Pinch mit der Hand)
   gleitet das Schild an den Wänden entlang und springt auf andere Wände; der Drucker wandert über Boden
@@ -41,7 +46,8 @@ Die App zeigt den echten Raum im Passthrough und ergänzt ihn um einen virtuelle
 |-----------|----------------|--------|------------|
 | 3D Printer (Maschinenmodell) | [Gregsterius](https://sketchfab.com/Gregsterius), [Sketchfab](https://sketchfab.com/3d-models/3d-printer-0e825a8d48b14bee883a131fe029d4fc) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) | Mit einem Blender-Skript (`Tools/Blender/prepare_printer.py`) bearbeitet: ~80 Einzelteile zu beweglichen Baugruppen zusammengefasst (Frame, Bed, Gantry, PrintHead, Kabel, Display), Pivots für die Animation gesetzt, auf 0,45 m skaliert, Display-Material leicht leuchtend (Emission), `DisplayAnchor` für den Display-Text ergänzt. Original unverändert in `SourceAssets/Printer3D/` |
 | Poke-Button | Meta Interaction SDK, Sample-Prefab `OculusInteractionSamplePokeButton` | [Meta Platform Technologies SDK License](https://developer.oculus.com/licenses/oculussdk) | Prefab unverändert; zur Laufzeit unsichtbar auf dem Drucker-Display (Touch-Fläche) und im Handgelenk-Menü instanziiert |
-| Materialien (`Assets/Materials`) | Eigene, abgeleitet von URPs `Lit.mat` | – | Farben / Emission angepasst |
+| Druckbare Modelle (`Assets/Models/PrintModels`) | Eigene, erzeugt mit `Tools/Blender/make_print_models.py` | – | – |
+| Materialien (`Assets/Materials`) | Eigene, abgeleitet von URPs `Lit.mat` (`PrintGhost`: URP Unlit, transparent) | – | Farben / Emission / Transparenz angepasst |
 | Schrift LiberationSans SDF | TextMesh Pro Essential Resources (Unity) | OFL | Unverändert |
 
 ### Sounds und Animationen
@@ -86,9 +92,10 @@ Assets/
     Common/              wiederverwendbar: TextFactory, ControllerHaptics, RayDraggable, HoverTint
     Sign/                Wandschild: WallSign, WallSignPlacer, SignRepositioner
     Printer/             Drucker: PrinterController, PrinterPlacer, PrinterTouchscreen, PrinterFeedback,
-                         PrinterColliders, PrintedPart, PrinterRepositioner
+                         PrinterColliders, PrintedPart, PrinterRepositioner, PrintModelSelector, GrabHint
     Room/                Raumwechsel: RoomManager, WristMenu
   Models/Printer3D/      bearbeitetes Druckermodell (FBX, Git LFS)
+  Models/PrintModels/    fünf druckbare Modelle (FBX, Git LFS, Read/Write aktiv)
   Prefabs/               PrintedPart (greifbares Bauteil)
   Materials/  Audio/     eigene Materialien und Sounds
   TextMesh Pro/          TMP Essential Resources
@@ -127,7 +134,8 @@ git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 
 | Aktion | Hand | Controller |
 |--------|------|------------|
-| Druck starten / pausieren / fortsetzen | Display des Druckers mit dem Finger antippen | Display mit der Controller-Spitze antippen |
+| Modell wählen | linken / rechten Rand des Displays (`<` `>`) antippen | ebenso mit der Controller-Spitze |
+| Druck starten / pausieren / fortsetzen | Mitte des Displays antippen | ebenso mit der Controller-Spitze |
 | Fertiges Bauteil nehmen | greifen | Grip-Taste |
 | Schild / Drucker verschieben | mit dem Strahl zielen, Pinch halten | zielen, Trigger halten; Stick vor/zurück = weiter weg / näher |
 | Handgelenk-Menü | linke Hand ins Blickfeld heben | linken Controller ins Blickfeld heben; Menü-Taste (≡) = *Re-place* |
@@ -161,7 +169,9 @@ git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 |------------|---------|
 | `PrinterController` | Simulierter Druckauftrag: bewegt Portal (Z), Druckkopf (X) und Bett (Y) prozedural, sodass die Düse Kreise zeichnet, während das Bauteil Schicht für Schicht wächst. API: `TogglePrint()`, `CancelPrint()`, `onStateChanged` (Idle → Printing ⇄ Paused → Finished) |
 | `PrinterPlacer` | Nach dem Laden des Raums: auf dem größten Tisch, falls groß genug (zum Nutzer gedreht), sonst auf einem virtuellen Podest (0,6 × 0,55 m, 0,75 m hoch) vor der Key Wall neben dem Schild, sonst vor dem Nutzer |
-| `PrinterTouchscreen` | Macht das Display zum Touchscreen: Der Poke-Button des Interaction SDK wird unsichtbar auf die Display-Oberfläche gesetzt (Position `DisplayAnchor`, Ausrichtung entlang der Bildschirmnormalen, auf Bildschirmgröße skaliert). *Select* am `PokeInteractable` schaltet den Druck um. Feedback: das Display leuchtet beim Annähern heller und blitzt beim Antippen (Emission des Display-Materials), Klick-Sound, Vibration |
+| `PrinterTouchscreen` | Macht das Display zum Touchscreen: Der Poke-Button des Interaction SDK wird unsichtbar auf die Display-Oberfläche gesetzt (Position `DisplayAnchor`, Ausrichtung entlang der Bildschirmnormalen, auf Zonengröße skaliert) – drei Zonen: `<` vorheriges Modell, Mitte Druck starten/pausieren, `>` nächstes Modell (während des Drucks pausiert jede Zone). Feedback: das Display pulsiert, solange es auf eine Eingabe wartet, leuchtet beim Annähern heller und blitzt beim Antippen (Emission des Display-Materials), Klick-Sound, Vibration |
+| `PrintModelSelector` | Fünf Modelle (Mesh aus `PrintModels.fbx`, Druckzeit 5–10 s) als transparente, sich drehende Geister auf dem Bett (Material `PrintGhost`, Alpha per `MaterialPropertyBlock`): Auswahl in der Mitte, vorheriges links / nächstes rechts kleiner und blasser; beim Blättern gleiten sie an den neuen Platz. Setzt den Auftrag per `PrinterController.SetJob` – das Bauteil-Prefab bekommt das Mesh und einen konvexen `MeshCollider` |
+| `GrabHint` | Schwebendes Schild „Grab me!“ mit Pfeil über dem fertigen Teil, zum Nutzer gedreht; verschwindet, sobald das Teil gegriffen wird |
 | `PrinterFeedback` | Statusleuchte (blau bereit, grün pulsierend druckt, gelb blinkend pausiert, weiß fertig), Text auf dem Display mit Hinweis, was Antippen als Nächstes bewirkt, räumliches Motorgeräusch + Pieptöne + Gong, Statuszeile am Schild |
 | `PrintedPart` + `Prefabs/PrintedPart.prefab` | Bauteil mit Rigidbody, Collider, `Grabbable`, Hand- und Controller-Grab (Quick Action *Add Grab Interaction*). Während des Drucks nicht greifbar; danach wird es beim Loslassen vom Bett gelöst und per `Grabbable.ForceKinematicDisabled` zum Physikobjekt. Bis zu 5 entnommene Teile bleiben im Raum |
 | `PrinterColliders` | MeshCollider am Rahmen, BoxCollider am Bett, damit man Teile zurücklegen kann |
@@ -204,6 +214,13 @@ blender --background --factory-startup --python Tools/Blender/prepare_printer.py
 | `PrintHead` | X-Achse auf dem Portal | Düsenspitze |
 | `ZCable`, `FilamentTube` | werden mitgestreckt | festes Ende |
 | `Display`, `DisplayAnchor` | statisch, Bildschirm leuchtet leicht blau | Mitte des Bildschirms |
+
+Die fünf druckbaren Modelle erzeugt ein zweites Skript (Pivot jeweils unten in der Mitte, max. 6 × 6 × 6 cm):
+
+```bash
+blender --background --factory-startup --python Tools/Blender/make_print_models.py -- \
+    Assets/Models/PrintModels/PrintModels.fbx
+```
 
 Alle Teile sind direkte Kinder von `Printer3D` (Blenders FBX-Option *Apply Transform* verdreht verschachtelte
 Kinder), deshalb bewegt der Controller-Code `PrintHead` zusammen mit `Gantry`.
