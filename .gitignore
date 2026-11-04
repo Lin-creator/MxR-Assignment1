@@ -119,5 +119,18 @@ Thumbs.db
 .idea/
 .vscode/
 
+# Meta Immersive Debugger Dev Agent: per-machine access token + LAN IP, regenerated automatically
+/[Aa]ssets/[Rr]esources/DevAgentSettings.asset
+/[Aa]ssets/[Rr]esources/DevAgentSettings.asset.meta
+
 # Python bytecode (Tools/Blender scripts)
 __pycache__/
+
+# Generated during builds (Performance Testing package, Meta XR input action bindings)
+/[Aa]ssets/[Rr]esources/PerformanceTestRun*.json*
+/[Aa]ssets/StreamingAssets/RuntimeActionBindings.json*
+/[Aa]ssets/StreamingAssets.meta
+
+# Unity crash-recovery scene backups
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta
