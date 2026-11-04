@@ -259,8 +259,8 @@ im Editor und auf dem Headset geprüft und Korrekturen angestoßen; der Assisten
 geschrieben. Die betroffenen Commits sind mit `Co-Authored-By: Claude` gekennzeichnet, Commits mit reiner
 Editor-Arbeit nicht.
 
-**Zeitaufwand.** Laut Commit-Historie rund 8–9 Stunden aktive Arbeit an einem Tag (ca. 03:00–07:30 und
-18:00–21:00 Uhr), mit Pausen etwa 10 Stunden.
+**Zeitaufwand.** Insgesamt etwa 13–15 Stunden – einschließlich Einrichtung von Unity und Meta SDK,
+Recherche, Modellsuche, Warten auf Builds und Tests auf dem Headset.
 
 **Was am meisten Zeit gekostet hat:**
 - **Quest-Builds:** jeder Build dauerte 10–15 Minuten, zwei Builds haben den PC zum Absturz gebracht
