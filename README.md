@@ -20,9 +20,9 @@ Die App zeigt den echten Raum im Passthrough und ergänzt ihn um einen virtuelle
   einer Beschreibung, wie ein FDM-Drucker funktioniert, und einer Live-Statuszeile.
 - Der **3D-Drucker** steht auf dem größten Tisch im Raum oder, wenn es keinen passenden gibt, auf einem
   virtuellen Podest vor der Hauptwand neben dem Schild.
-- Mit einem **Poke-Button** (Finger oder Controller) startet, pausiert und setzt man einen Druck fort.
+- Das **Display des Druckers ist ein Touchscreen:** Antippen (Finger oder Controller) startet, pausiert und setzt einen Druck fort.
   Druckkopf, Bett und Portal fahren dabei realistisch, und auf dem Bett wächst Schicht für Schicht ein Bauteil.
-  Feedback gibt es über eine Statusleuchte, Text auf dem Drucker-Display, Motorgeräusch, Pieptöne,
+  Feedback gibt es über das aufleuchtende Display, eine Statusleuchte, Text und Hinweise auf dem Display, Motorgeräusch, Pieptöne,
   einen Abschluss-Gong, Controller-Vibration und die Statuszeile am Schild.
 - Das **fertige Bauteil kann man greifen**, werfen oder ablegen; es fällt auf den echten Boden oder Tisch
   (unsichtbare Raum-Collider der *Effect Mesh*).
@@ -40,7 +40,7 @@ Die App zeigt den echten Raum im Passthrough und ergänzt ihn um einen virtuelle
 | Ressource | Quelle / Autor | Lizenz | Änderungen |
 |-----------|----------------|--------|------------|
 | 3D Printer (Maschinenmodell) | [Gregsterius](https://sketchfab.com/Gregsterius), [Sketchfab](https://sketchfab.com/3d-models/3d-printer-0e825a8d48b14bee883a131fe029d4fc) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) | Mit einem Blender-Skript (`Tools/Blender/prepare_printer.py`) bearbeitet: ~80 Einzelteile zu beweglichen Baugruppen zusammengefasst (Frame, Bed, Gantry, PrintHead, Kabel, Display), Pivots für die Animation gesetzt, auf 0,45 m skaliert, Display-Material leicht leuchtend (Emission), `DisplayAnchor` für den Display-Text ergänzt. Original unverändert in `SourceAssets/Printer3D/` |
-| Poke-Button | Meta Interaction SDK, Sample-Prefab `OculusInteractionSamplePokeButton` | [Meta Platform Technologies SDK License](https://developer.oculus.com/licenses/oculussdk) | Unverändert; wird zur Laufzeit instanziiert, Beschriftung per Code gesetzt |
+| Poke-Button | Meta Interaction SDK, Sample-Prefab `OculusInteractionSamplePokeButton` | [Meta Platform Technologies SDK License](https://developer.oculus.com/licenses/oculussdk) | Prefab unverändert; zur Laufzeit unsichtbar auf dem Drucker-Display (Touch-Fläche) und im Handgelenk-Menü instanziiert |
 | Materialien (`Assets/Materials`) | Eigene, abgeleitet von URPs `Lit.mat` | – | Farben / Emission angepasst |
 | Schrift LiberationSans SDF | TextMesh Pro Essential Resources (Unity) | OFL | Unverändert |
 
@@ -85,7 +85,7 @@ Assets/
   Scripts/
     Common/              wiederverwendbar: TextFactory, ControllerHaptics, RayDraggable, HoverTint
     Sign/                Wandschild: WallSign, WallSignPlacer, SignRepositioner
-    Printer/             Drucker: PrinterController, PrinterPlacer, PrinterButton, PrinterFeedback,
+    Printer/             Drucker: PrinterController, PrinterPlacer, PrinterTouchscreen, PrinterFeedback,
                          PrinterColliders, PrintedPart, PrinterRepositioner
     Room/                Raumwechsel: RoomManager, WristMenu
   Models/Printer3D/      bearbeitetes Druckermodell (FBX, Git LFS)
@@ -127,7 +127,7 @@ git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 
 | Aktion | Hand | Controller |
 |--------|------|------------|
-| Druck starten / pausieren / fortsetzen | Button neben dem Drucker mit dem Finger drücken | Button mit dem Controller drücken |
+| Druck starten / pausieren / fortsetzen | Display des Druckers mit dem Finger antippen | Display mit der Controller-Spitze antippen |
 | Fertiges Bauteil nehmen | greifen | Grip-Taste |
 | Schild / Drucker verschieben | mit dem Strahl zielen, Pinch halten | zielen, Trigger halten; Stick vor/zurück = weiter weg / näher |
 | Handgelenk-Menü | linke Hand ins Blickfeld heben | linken Controller ins Blickfeld heben; Menü-Taste (≡) = *Re-place* |
@@ -143,7 +143,7 @@ git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 | `[BuildingBlock] Effect Mesh` | unsichtbare Collider für den echten Raum, damit Bauteile auf Boden und Möbeln landen |
 | `Directional Light` | Licht für die Lit-Materialien (ohne Schatten, Performance) |
 | `WallSign` | `WallSign`, `WallSignPlacer`, `RayDraggable`, `SignRepositioner` |
-| `Printer3D` | Druckermodell + `PrinterController`, `PrinterPlacer`, `PrinterButton`, `PrinterFeedback`, `PrinterColliders`, `RayDraggable`, `PrinterRepositioner` |
+| `Printer3D` | Druckermodell + `PrinterController`, `PrinterPlacer`, `PrinterTouchscreen`, `PrinterFeedback`, `PrinterColliders`, `RayDraggable`, `PrinterRepositioner` |
 | `RoomManager` | `RoomManager` + `WristMenu` |
 
 ### Technische Umsetzung
@@ -160,9 +160,9 @@ git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 | Komponente | Aufgabe |
 |------------|---------|
 | `PrinterController` | Simulierter Druckauftrag: bewegt Portal (Z), Druckkopf (X) und Bett (Y) prozedural, sodass die Düse Kreise zeichnet, während das Bauteil Schicht für Schicht wächst. API: `TogglePrint()`, `CancelPrint()`, `onStateChanged` (Idle → Printing ⇄ Paused → Finished) |
-| `PrinterPlacer` | Nach dem Laden des Raums: auf dem größten Tisch, falls groß genug (zum Nutzer gedreht), sonst auf einem virtuellen Podest vor der Key Wall neben dem Schild, sonst vor dem Nutzer |
-| `PrinterButton` | Erzeugt den Poke-Button des Interaction SDK neben dem Drucker; *Select* am `PokeInteractable` schaltet den Druck um; Beschriftung zeigt die nächste Aktion; Vibration |
-| `PrinterFeedback` | Statusleuchte (blau bereit, grün pulsierend druckt, gelb blinkend pausiert, weiß fertig), Text auf dem Display, räumliches Motorgeräusch + Pieptöne + Gong, Statuszeile am Schild |
+| `PrinterPlacer` | Nach dem Laden des Raums: auf dem größten Tisch, falls groß genug (zum Nutzer gedreht), sonst auf einem virtuellen Podest (0,6 × 0,55 m, 0,75 m hoch) vor der Key Wall neben dem Schild, sonst vor dem Nutzer |
+| `PrinterTouchscreen` | Macht das Display zum Touchscreen: Der Poke-Button des Interaction SDK wird unsichtbar auf die Display-Oberfläche gesetzt (Position `DisplayAnchor`, Ausrichtung entlang der Bildschirmnormalen, auf Bildschirmgröße skaliert). *Select* am `PokeInteractable` schaltet den Druck um. Feedback: das Display leuchtet beim Annähern heller und blitzt beim Antippen (Emission des Display-Materials), Klick-Sound, Vibration |
+| `PrinterFeedback` | Statusleuchte (blau bereit, grün pulsierend druckt, gelb blinkend pausiert, weiß fertig), Text auf dem Display mit Hinweis, was Antippen als Nächstes bewirkt, räumliches Motorgeräusch + Pieptöne + Gong, Statuszeile am Schild |
 | `PrintedPart` + `Prefabs/PrintedPart.prefab` | Bauteil mit Rigidbody, Collider, `Grabbable`, Hand- und Controller-Grab (Quick Action *Add Grab Interaction*). Während des Drucks nicht greifbar; danach wird es beim Loslassen vom Bett gelöst und per `Grabbable.ForceKinematicDisabled` zum Physikobjekt. Bis zu 5 entnommene Teile bleiben im Raum |
 | `PrinterColliders` | MeshCollider am Rahmen, BoxCollider am Bett, damit man Teile zurücklegen kann |
 
