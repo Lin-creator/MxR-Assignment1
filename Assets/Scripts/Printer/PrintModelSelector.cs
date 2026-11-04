@@ -11,11 +11,11 @@ namespace MxR.Printer
     ///
     /// Every model has a "ghost" preview (transparent, slowly turning) on the bed: the selected model
     /// in the middle where it will be printed, the previous one on the user's left and the next one on
-    /// the right – smaller and even more faded. Tapping the left / right edge of the display
-    /// (<see cref="PrinterTouchscreen"/>) scrolls; the ghosts slide to their new places.
+    /// the right – smaller and even more faded. Swiping over the previews with a finger or controller
+    /// (<see cref="PreviewSwipe"/>) drags the carousel along; when let go it snaps to the nearest model.
     ///
     /// While printing, only a faint ghost of the selected model stays as the target outline the real
-    /// part grows into. Selecting is possible when the printer is idle or finished.
+    /// part grows into. Selecting is possible when the printer is idle, or finished and the part was taken.
     /// </summary>
     [RequireComponent(typeof(PrinterController))]
     public class PrintModelSelector : MonoBehaviour
@@ -61,8 +61,12 @@ namespace MxR.Printer
         public int Index { get; private set; }
         public PrintModel Selected => models.Count > 0 ? models[Index] : null;
         public int Count => models.Count;
-        /// <summary>Selecting is possible while the printer is idle or finished.</summary>
-        public bool CanSelect => printer.State == State.Idle || printer.State == State.Finished;
+        /// <summary>Selecting is possible while the printer is idle, or finished and the part was taken from the bed.</summary>
+        public bool CanSelect => printer.State == State.Idle || (printer.State == State.Finished && !printer.HasPartOnBed);
+        /// <summary>Distance between the previews on the bed (m).</summary>
+        public float Spacing => spacing;
+        /// <summary>Brightens the previews, e.g. while a finger is over them.</summary>
+        public bool Highlighted { get; set; }
         /// <summary>Raised after the selection changed.</summary>
         public event Action<PrintModel> SelectionChanged;
 
@@ -72,7 +76,8 @@ namespace MxR.Printer
         readonly List<Renderer> ghosts = new List<Renderer>();
         readonly List<float> ghostAlpha = new List<float>();   // current (faded) alpha per ghost
         MaterialPropertyBlock block;
-        float scroll;      // animated index, slides towards Index
+        float scroll;      // animated index, slides towards Index (+ drag)
+        float drag;        // live drag offset in slots (positive = content moved to the user's right)
         float turn;
 
         void Awake()
@@ -130,6 +135,9 @@ namespace MxR.Printer
         [ContextMenu("Next model")] public void Next() => Step(+1);
         [ContextMenu("Previous model")] public void Previous() => Step(-1);
 
+        /// <summary>Moves the carousel with the finger: offset in slots, positive = towards the user's right.</summary>
+        public void SetDrag(float slots) => drag = Mathf.Clamp(slots, -1f, 1f);
+
         void Step(int direction)
         {
             if (models.Count < 2 || !CanSelect) return;
@@ -153,12 +161,15 @@ namespace MxR.Printer
             int n = ghosts.Count;
             if (n == 0) return;
 
-            // slide the carousel along the shortest way round
-            float delta = Mathf.Repeat(Index - scroll + n * 0.5f, n) - n * 0.5f;
-            scroll = Mathf.Repeat(scroll + Mathf.Clamp(delta, -slideSpeed * Time.deltaTime, slideSpeed * Time.deltaTime), n);
+            // slide the carousel along the shortest way round; dragging content to the right shows the previous model
+            float target = Index - drag;
+            float delta = Mathf.Repeat(target - scroll + n * 0.5f, n) - n * 0.5f;
+            float speed = (drag != 0f ? slideSpeed * 3f : slideSpeed) * Time.deltaTime;   // follow the finger closely
+            scroll = Mathf.Repeat(scroll + Mathf.Clamp(delta, -speed, speed), n);
 
-            bool carousel = CanSelect;
-            bool printing = !carousel;
+            bool printing = printer.State == State.Printing || printer.State == State.Paused;
+            bool partOnBed = !printing && printer.HasPartOnBed;   // hide the carousel until the part is taken
+            float boost = Highlighted ? 1.35f : 1f;
             turn = printing ? Mathf.MoveTowardsAngle(turn, 0f, 360f * Time.deltaTime)   // match the real part
                             : turn + turnSpeed * Time.deltaTime;
 
@@ -169,12 +180,12 @@ namespace MxR.Printer
                 float slot = Mathf.Repeat(i - scroll + n * 0.5f, n) - n * 0.5f;
                 float d = Mathf.Abs(slot);
 
-                float target;
-                if (printing) target = i == Index ? printingAlpha : 0f;
-                else if (i == Index && printer.HasPartOnBed && d < 0.5f) target = 0f;   // the real part is there
-                else target = d <= 1f ? Mathf.Lerp(selectedAlpha, sideAlpha, d)
-                                      : Mathf.Lerp(sideAlpha, 0f, Mathf.Clamp01((d - 1f) * 2f));
-                ghostAlpha[i] = Mathf.MoveTowards(ghostAlpha[i], target, fadeSpeed * Time.deltaTime);
+                float alpha;
+                if (printing) alpha = i == Index ? printingAlpha : 0f;
+                else if (partOnBed) alpha = 0f;
+                else alpha = boost * (d <= 1f ? Mathf.Lerp(selectedAlpha, sideAlpha, d)
+                                              : Mathf.Lerp(sideAlpha, 0f, Mathf.Clamp01((d - 1f) * 2f)));
+                ghostAlpha[i] = Mathf.MoveTowards(ghostAlpha[i], Mathf.Min(alpha, 0.8f), fadeSpeed * Time.deltaTime);
 
                 Renderer r = ghosts[i];
                 bool visible = ghostAlpha[i] > 0.003f;
