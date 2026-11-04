@@ -180,6 +180,10 @@ namespace MxR.Printer
                     screen = $"<b>PAUSED</b>\n{percent}%";
                     sign = $"Status: paused at {percent}%";
                     break;
+                case State.Finished when printer.PrintsGrabbableParts:
+                    screen = "<b>DONE</b>\n<size=60%>take your part</size>";
+                    sign = "Status: print finished - pick up your part!";
+                    break;
                 case State.Finished:
                     screen = "<b>DONE</b>\n<size=60%>print finished</size>";
                     sign = "Status: print finished";
