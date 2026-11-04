@@ -94,6 +94,9 @@ namespace MxR.Common
             tint.Refresh(gameObject);
         }
 
+        /// <summary>Collects the renderers for the highlight again (after parts were added or removed).</summary>
+        public void RefreshHighlight() => tint.Refresh(gameObject);
+
         void Update()
         {
             if (!IsDragging) return;
