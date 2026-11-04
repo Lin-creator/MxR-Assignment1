@@ -47,6 +47,8 @@ git lfs pull   # only needed if LFS was installed after cloning
 | `[BuildingBlock] Passthrough` | OVRPassthroughLayer as underlay; the camera clears to transparent black so the real room is visible |
 | `[BuildingBlock] MR Utility Kit` | MRUK loads the room model from Space Setup (walls, floor, furniture) |
 | `WallSign` | `WallSign` + `WallSignPlacer` – information board on the key wall |
+| `[BuildingBlock] Interactions Rig` | Interaction SDK interactors (poke, grab, ray) for hands and controllers |
+| `Printer3D` | the printer model + `PrinterController`, `PrinterPlacer`, `PrinterButton`, `PrinterFeedback` |
 
 ### Wall sign (`Assets/Scripts/Sign/`)
 
@@ -59,12 +61,26 @@ git lfs pull   # only needed if LFS was installed after cloning
 - On Quest 2 the room must be set up manually (*Settings → Physical Space → Space Setup*);
   Quest 3 scans it automatically.
 
+### Printer interaction (`Assets/Scripts/Printer/`)
+
+| Component | Role |
+|-----------|------|
+| `PrinterController` | Simulated print job: moves gantry (Z), print head (X) and bed (Y) procedurally so the nozzle draws circles while a cylinder grows layer by layer. API: `TogglePrint()`, `CancelPrint()`, `onStateChanged` (Idle → Printing ⇄ Paused → Finished) |
+| `PrinterPlacer` | After MRUK loaded the room: on the largest table if big enough (facing the user), else on a virtual stand in front of the key wall beside the sign, else in front of the user |
+| `PrinterButton` | Spawns the Interaction SDK sample poke button next to the printer; *Select* on its `PokeInteractable` toggles the print; label shows the next action; controller vibration |
+| `PrinterFeedback` | Status light (blue ready, pulsing green printing, blinking amber paused, white done), text on the printer display, spatial motor hum + beeps + chime, status line on the wall sign |
+
+Sounds are synthesised by `Tools/Audio/generate_sounds.py` (no third-party audio).
+Materials in `Assets/Materials` are derived from URP's `Lit.mat`; emission is enabled in the asset
+so the emissive shader variant is included in the Quest build.
+
 ## Repository layout
 
 ```
 Assets/            Project content (scenes, scripts, prefabs, models) – versioned
 SourceAssets/      Unmodified third-party originals (not imported by Unity)
 Tools/Blender/     Blender scripts that generate assets in Assets/Models
+Tools/Audio/       Python script that generates the sound effects in Assets/Audio
 Packages/          manifest.json + packages-lock.json (dependencies) – versioned
 ProjectSettings/   Unity project settings – versioned
 Library/ Temp/ Logs/ UserSettings/   regenerated locally – ignored (.gitignore)
