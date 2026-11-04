@@ -334,8 +334,8 @@ MonoBehaviour:
     (Y) and the gantry moves up (Z) after every layer.
 
 
-    Tap the printer''s display
-    to start a print.'
+    Choose a model with the arrows
+    on the printer''s display, tap its middle to print.'
   initialStatus: 'Status: ready'
   size: {x: 0.9, y: 0.6}
   boardMaterial: {fileID: 2100000, guid: 949f24bf9d244e13a36bdd883e232d93, type: 2}
