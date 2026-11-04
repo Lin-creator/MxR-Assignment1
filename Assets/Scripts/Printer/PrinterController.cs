@@ -72,7 +72,7 @@ namespace MxR.Printer
         /// <summary>Name of the selected model (empty = default part).</summary>
         public string JobName { get; private set; } = "";
         /// <summary>The bed transform; printed parts and previews are its children.</summary>
-        public Transform Bed => bed;
+        public Transform Bed => bed ? bed : bed = transform.Find("Bed");   // also before Awake (other components' Awake)
         /// <summary>Where parts are printed, in the bed's local space (below the nozzle's home position).</summary>
         public Vector3 PrintCentreOnBed { get { Vector3 c = headRest - bedRest; return new Vector3(c.x, 0f, c.z); } }
         /// <summary>The part of the last job while it still sits on the bed (null if none or taken).</summary>
