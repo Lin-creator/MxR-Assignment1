@@ -127,8 +127,8 @@ namespace MxR.Printer
 
         // ---------- selection ----------
 
-        public void Next() => Step(+1);
-        public void Previous() => Step(-1);
+        [ContextMenu("Next model")] public void Next() => Step(+1);
+        [ContextMenu("Previous model")] public void Previous() => Step(-1);
 
         void Step(int direction)
         {
