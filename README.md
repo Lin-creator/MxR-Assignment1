@@ -4,10 +4,10 @@ Mixed Reality Praktikum – Assignment 1 (Passthrough, wall-anchored board, inte
 
 | Task | Status |
 |------|--------|
-| 01 Passthrough enabled | ⬜ |
-| 02 Wall board (MRUK key wall) with name + description | ⬜ |
-| 03 Imported machine model placed in the room | ⬜ |
-| 04 Interaction with the machine | ⬜ |
+| 01 Passthrough enabled | ✅ |
+| 02 Wall board (MRUK key wall) with name + description | ✅ |
+| 03 Imported machine model placed in the room | ✅ |
+| 04 Interaction with the machine | ✅ |
 
 ## Requirements
 
