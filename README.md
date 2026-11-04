@@ -1,171 +1,245 @@
-# MxR Assignment 1 – First Steps in Mixed Reality
+# MxR Assignment 1 – 3D-Drucker im eigenen Raum
 
-Mixed Reality Praktikum – Assignment 1 (Passthrough, wall-anchored board, interactive machine) for **Meta Quest**.
+Mixed Reality Praktikum – Assignment 1 (Passthrough, Wandschild, interaktive Maschine) für **Meta Quest 2 / 3 / 3S**.
 
-| Task | Status |
-|------|--------|
-| 01 Passthrough enabled | ✅ |
-| 02 Wall board (MRUK key wall) with name + description | ✅ |
-| 03 Imported machine model placed in the room | ✅ |
-| 04 Interaction with the machine | ✅ |
+| Aufgabe | Status |
+|---------|--------|
+| 01 Passthrough aktiviert | ✅ |
+| 02 Schild an der Wand (MRUK Key Wall) mit Name + Beschreibung | ✅ |
+| 03 Importiertes Maschinenmodell im Raum platziert | ✅ |
+| 04 Interaktion mit der Maschine | ✅ |
 
-## Requirements
+## 1.1 Allgemeine Projektinformationen
 
-| Tool | Version |
-|------|---------|
-| Unity | **6000.3.27f1** (with *Android Build Support*: OpenJDK, Android SDK & NDK) |
-| Render pipeline | Universal Render Pipeline 17.3 |
+**Projektname:** 3D-Drucker im eigenen Raum (*MxR Assignment 1*)
+
+**Kurze Beschreibung:**
+Die App zeigt den echten Raum im Passthrough und ergänzt ihn um einen virtuellen 3D-Drucker:
+
+- An der **Hauptwand des Raums** (MRUK *Key Wall*) hängt ein Infoschild mit Titel, Name des Autors,
+  einer Beschreibung, wie ein FDM-Drucker funktioniert, und einer Live-Statuszeile.
+- Der **3D-Drucker** steht auf dem größten Tisch im Raum oder, wenn es keinen passenden gibt, auf einem
+  virtuellen Podest vor der Hauptwand neben dem Schild.
+- Mit einem **Poke-Button** (Finger oder Controller) startet, pausiert und setzt man einen Druck fort.
+  Druckkopf, Bett und Portal fahren dabei realistisch, und auf dem Bett wächst Schicht für Schicht ein Bauteil.
+  Feedback gibt es über eine Statusleuchte, Text auf dem Drucker-Display, Motorgeräusch, Pieptöne,
+  einen Abschluss-Gong, Controller-Vibration und die Statuszeile am Schild.
+- Das **fertige Bauteil kann man greifen**, werfen oder ablegen; es fällt auf den echten Boden oder Tisch
+  (unsichtbare Raum-Collider der *Effect Mesh*).
+- **Schild und Drucker lassen sich verschieben:** Mit dem Strahl (Controller-Trigger / Pinch mit der Hand)
+  gleitet das Schild an den Wänden entlang und springt auf andere Wände; der Drucker wandert über Boden
+  und Tische (auf Tischen verschwindet das Podest) und dreht sich dabei zum Nutzer.
+- **Raumwechsel:** Hebt man die linke Hand bzw. den linken Controller ins Blickfeld, erscheint ein
+  Handgelenk-Menü mit *Re-place* (Raum neu laden, alles neu platzieren) und *Scan room* (Space Setup).
+  Wechselt man während die App läuft in einen anderen Raum, wird das automatisch erkannt.
+
+## 1.2 Externe Ressourcen
+
+### 3D-Modelle, Texturen, Materialien
+
+| Ressource | Quelle / Autor | Lizenz | Änderungen |
+|-----------|----------------|--------|------------|
+| 3D Printer (Maschinenmodell) | [Gregsterius](https://sketchfab.com/Gregsterius), [Sketchfab](https://sketchfab.com/3d-models/3d-printer-0e825a8d48b14bee883a131fe029d4fc) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) | Mit einem Blender-Skript (`Tools/Blender/prepare_printer.py`) bearbeitet: ~80 Einzelteile zu beweglichen Baugruppen zusammengefasst (Frame, Bed, Gantry, PrintHead, Kabel, Display), Pivots für die Animation gesetzt, auf 0,45 m skaliert, Display-Material leicht leuchtend (Emission), `DisplayAnchor` für den Display-Text ergänzt. Original unverändert in `SourceAssets/Printer3D/` |
+| Poke-Button | Meta Interaction SDK, Sample-Prefab `OculusInteractionSamplePokeButton` | [Meta Platform Technologies SDK License](https://developer.oculus.com/licenses/oculussdk) | Unverändert; wird zur Laufzeit instanziiert, Beschriftung per Code gesetzt |
+| Materialien (`Assets/Materials`) | Eigene, abgeleitet von URPs `Lit.mat` | – | Farben / Emission angepasst |
+| Schrift LiberationSans SDF | TextMesh Pro Essential Resources (Unity) | OFL | Unverändert |
+
+### Sounds und Animationen
+
+- **Sounds:** alle selbst synthetisiert mit `Tools/Audio/generate_sounds.py` (nur Python-Standardbibliothek):
+  Motorgeräusch, Start-/Pause-Pieptöne, Fertig-Gong, Aufnehmen-/Ablegen-Geräusch.
+- **Animationen:** keine Animation-Clips; die Druckbewegung wird prozedural im Code berechnet (`PrinterController`).
+
+### Plugins und Bibliotheken
+
+Die Meta-Pakete stehen unter der [Meta Platform Technologies SDK License](https://developer.oculus.com/licenses/oculussdk) und kommen aus der Meta-Registry (`npm.developer.oculus.com`, in `Packages/manifest.json` eingetragen), die Unity-Pakete aus der Unity-Registry.
+
+| Paket | Version | Wofür |
+|-------|---------|-------|
+| Meta XR Core SDK (`com.meta.xr.sdk.core`) | 207.0.1 | Kamera-Rig, Passthrough, Controller-Input, Building Blocks |
+| Meta MR Utility Kit (`com.meta.xr.mrutilitykit`) | 207.0.1 | Raummodell (Wände, Boden, Tische), Key Wall, Raycasts gegen den Raum, Effect Mesh |
+| Meta XR Interaction SDK (`com.meta.xr.sdk.interaction(.ovr)`) | 207.0.1 | Poke, Greifen (Hand + Controller), Strahl-Interaktion |
+| Unity OpenXR Plugin (`com.unity.xr.openxr`) | 1.19.0 | OpenXR-Runtime mit Meta-XR-Feature-Gruppe |
+| Universal Render Pipeline | 17.3.0 | Rendering |
+| Input System | 1.20.1 | Unity-Standard-Input |
+| uGUI / TextMesh Pro | 2.0.0 | 3D-Text auf Schild, Display und Menü |
+
+## 1.3 Technische Details und Installation
+
+### Unity-Version und Voraussetzungen
+
+| Werkzeug | Version |
+|----------|---------|
+| Unity | **6000.3.27f1** mit *Android Build Support* (OpenJDK, Android SDK & NDK) |
 | Git + **Git LFS** | Git LFS ≥ 3.x |
-| Headset | Meta Quest 3 / 3S (developer mode enabled) |
+| Headset | Meta Quest 2, 3 oder 3S im Entwicklermodus |
+| Optional | Blender 5.2 (nur um das Druckermodell neu zu erzeugen) |
 
-## Setup
+Build-Einstellungen: Android, IL2CPP, ARM64, Min. SDK 32, Single-Pass-Instanced-Rendering, OpenXR.
+
+### Dateistruktur
+
+```
+Assets/
+  Scenes/MRScene.unity   die einzige Szene der App
+  Scripts/
+    Common/              wiederverwendbar: TextFactory, ControllerHaptics, RayDraggable, HoverTint
+    Sign/                Wandschild: WallSign, WallSignPlacer, SignRepositioner
+    Printer/             Drucker: PrinterController, PrinterPlacer, PrinterButton, PrinterFeedback,
+                         PrinterColliders, PrintedPart, PrinterRepositioner
+    Room/                Raumwechsel: RoomManager, WristMenu
+  Models/Printer3D/      bearbeitetes Druckermodell (FBX, Git LFS)
+  Prefabs/               PrintedPart (greifbares Bauteil)
+  Materials/  Audio/     eigene Materialien und Sounds
+  TextMesh Pro/          TMP Essential Resources
+  Settings/ XR/ Resources/ Oculus/ Plugins/Android/
+                         URP-, OpenXR- und Meta-Einstellungen, AndroidManifest
+SourceAssets/            unveränderte Originale von Drittanbietern (nicht von Unity importiert)
+Tools/Blender/           Blender-Skripte, die Assets/Models erzeugen
+Tools/Audio/             Python-Skript, das die Sounds in Assets/Audio erzeugt
+Packages/                manifest.json + packages-lock.json (Abhängigkeiten)
+ProjectSettings/         Unity-Projekteinstellungen
+Library/ Temp/ Logs/ UserSettings/   werden lokal erzeugt – ignoriert (.gitignore)
+```
+
+### Installationsanleitung
 
 ```bash
-# 1. Install Git LFS once per machine (otherwise binaries are checked out as text pointers)
+# 1. Git LFS einmal pro Rechner installieren (sonst kommen Binärdateien nur als Text-Pointer an)
 git lfs install
 
-# 2. Clone (LFS files are downloaded automatically)
+# 2. Klonen (LFS-Dateien werden automatisch geladen)
 git clone <repo-url>
 cd <repo>
-git lfs pull   # only needed if LFS was installed after cloning
+git lfs pull   # nur nötig, falls LFS erst nach dem Klonen installiert wurde
 ```
 
-3. Open the folder in **Unity Hub → Add → Add project from disk**, using editor version `6000.3.27f1`.
-   Unity regenerates `Library/` on first import (takes a few minutes).
+3. Ordner in **Unity Hub → Add → Add project from disk** öffnen (Editor `6000.3.27f1`).
+   Beim ersten Öffnen baut Unity `Library/` neu auf (dauert einige Minuten).
+4. **Szene:** Es gibt nur eine Szene, **`Assets/Scenes/MRScene.unity`**; sie ist als einzige in den Build Settings eingetragen.
+5. Quest per USB-C verbinden und USB-Debugging im Headset erlauben.
+6. *File → Build Profiles →* **Android** wählen, *Switch Platform*, unter *Run Device* die Quest auswählen, **Build And Run**.
+7. Im Headset: Raum einrichten, falls noch nicht geschehen (Quest 2: *Einstellungen → Physischer Raum → Space Setup*;
+   Quest 3 scannt automatisch), und beim Start die Berechtigung für *Raumdaten* erlauben.
+   Ohne Raumdaten werden Schild und Drucker vor dem Nutzer platziert.
 
-## Build & run on Quest
+### Bedienung
 
-1. Connect the Quest via USB-C and allow USB debugging in the headset.
-2. *File → Build Profiles →* select **Android**, then *Switch Platform*.
-3. Pick the Quest under *Run Device*, then **Build And Run**.
+| Aktion | Hand | Controller |
+|--------|------|------------|
+| Druck starten / pausieren / fortsetzen | Button neben dem Drucker mit dem Finger drücken | Button mit dem Controller drücken |
+| Fertiges Bauteil nehmen | greifen | Grip-Taste |
+| Schild / Drucker verschieben | mit dem Strahl zielen, Pinch halten | zielen, Trigger halten; Stick vor/zurück = weiter weg / näher |
+| Handgelenk-Menü | linke Hand ins Blickfeld heben | linken Controller ins Blickfeld heben; Menü-Taste (≡) = *Re-place* |
 
-## Scene overview (`Assets/Scenes/MRScene.unity`)
+### Szenenaufbau (`MRScene`)
 
-| Object | Purpose |
-|--------|---------|
-| `[BuildingBlock] Camera Rig` | OVRCameraRig (head + controller tracking). OVRManager: passthrough + scene support required, target devices Quest 2/3/3S |
-| `[BuildingBlock] Passthrough` | OVRPassthroughLayer as underlay; the camera clears to transparent black so the real room is visible |
-| `[BuildingBlock] MR Utility Kit` | MRUK loads the room model from Space Setup (walls, floor, furniture) |
-| `WallSign` | `WallSign` + `WallSignPlacer` – information board on the key wall |
-| `[BuildingBlock] Interactions Rig` | Interaction SDK interactors (poke, grab, ray) for hands and controllers |
-| `Printer3D` | the printer model + `PrinterController`, `PrinterPlacer`, `PrinterButton`, `PrinterFeedback`, `PrinterColliders` |
-| `[BuildingBlock] Effect Mesh` | invisible colliders for the real room (walls, floor, furniture) so released parts land on them |
+| Objekt | Zweck |
+|--------|-------|
+| `[BuildingBlock] Camera Rig` | OVRCameraRig (Kopf- und Controller-Tracking). OVRManager: Passthrough + Scene Support erforderlich, Zielgeräte Quest 2/3/3S |
+| `[BuildingBlock] Passthrough` | OVRPassthroughLayer als Underlay; die Kamera löscht transparent, so ist der echte Raum sichtbar |
+| `[BuildingBlock] MR Utility Kit` | MRUK lädt das Raummodell aus dem Space Setup (Data Source: *Device*) |
+| `[BuildingBlock] Interactions Rig` | Interaction-SDK-Interaktoren (Poke, Greifen, Strahl) für Hände und Controller; Locomotion deaktiviert (künstliche Bewegung würde virtuelle Inhalte gegen den echten Raum verschieben) |
+| `[BuildingBlock] Effect Mesh` | unsichtbare Collider für den echten Raum, damit Bauteile auf Boden und Möbeln landen |
+| `Directional Light` | Licht für die Lit-Materialien (ohne Schatten, Performance) |
+| `WallSign` | `WallSign`, `WallSignPlacer`, `RayDraggable`, `SignRepositioner` |
+| `Printer3D` | Druckermodell + `PrinterController`, `PrinterPlacer`, `PrinterButton`, `PrinterFeedback`, `PrinterColliders`, `RayDraggable`, `PrinterRepositioner` |
+| `RoomManager` | `RoomManager` + `WristMenu` |
 
-### Wall sign (`Assets/Scripts/Sign/`)
+### Technische Umsetzung
 
-- `WallSign` builds the board from code: dark backboard, blue accent bars and TextMeshPro texts
-  (title, author name, description, live status line). All texts are editable in the Inspector.
-- `WallSignPlacer` waits for MRUK's *scene loaded* callback, picks the room's **key wall**
-  (`MRUKRoom.GetKeyWall` – the longest wall with no other wall behind it) and centres the board on it
-  1.5 m above the floor, 1 cm in front of the wall, facing into the room.
-  Without room data (no Space Setup / permission denied) the board is placed 2 m in front of the user.
-- On Quest 2 the room must be set up manually (*Settings → Physical Space → Space Setup*);
-  Quest 3 scans it automatically.
+**Wandschild** (`Assets/Scripts/Sign/`)
+- `WallSign` baut das Schild aus Code: dunkle Rückwand, blaue Akzentbalken, TextMeshPro-Texte (Titel, Name,
+  Beschreibung, Live-Statuszeile). Alle Texte sind im Inspector änderbar.
+- `WallSignPlacer` wartet auf MRUKs *Scene loaded*-Callback, nimmt die **Key Wall** des Raums
+  (`MRUKRoom.GetKeyWall` – die längste Wand ohne andere Wand dahinter) und zentriert das Schild 1,5 m über
+  dem Boden, 1 cm vor der Wand, Blickrichtung in den Raum. Ohne Raumdaten: 2 m vor dem Nutzer.
 
-### Printer interaction (`Assets/Scripts/Printer/`)
+**Drucker** (`Assets/Scripts/Printer/`)
 
-| Component | Role |
-|-----------|------|
-| `PrinterController` | Simulated print job: moves gantry (Z), print head (X) and bed (Y) procedurally so the nozzle draws circles while a cylinder grows layer by layer. API: `TogglePrint()`, `CancelPrint()`, `onStateChanged` (Idle → Printing ⇄ Paused → Finished) |
-| `PrinterPlacer` | After MRUK loaded the room: on the largest table if big enough (facing the user), else on a virtual stand in front of the key wall beside the sign, else in front of the user |
-| `PrinterButton` | Spawns the Interaction SDK sample poke button next to the printer; *Select* on its `PokeInteractable` toggles the print; label shows the next action; controller vibration |
-| `PrinterFeedback` | Status light (blue ready, pulsing green printing, blinking amber paused, white done), text on the printer display, spatial motor hum + beeps + chime, status line on the wall sign |
+| Komponente | Aufgabe |
+|------------|---------|
+| `PrinterController` | Simulierter Druckauftrag: bewegt Portal (Z), Druckkopf (X) und Bett (Y) prozedural, sodass die Düse Kreise zeichnet, während das Bauteil Schicht für Schicht wächst. API: `TogglePrint()`, `CancelPrint()`, `onStateChanged` (Idle → Printing ⇄ Paused → Finished) |
+| `PrinterPlacer` | Nach dem Laden des Raums: auf dem größten Tisch, falls groß genug (zum Nutzer gedreht), sonst auf einem virtuellen Podest vor der Key Wall neben dem Schild, sonst vor dem Nutzer |
+| `PrinterButton` | Erzeugt den Poke-Button des Interaction SDK neben dem Drucker; *Select* am `PokeInteractable` schaltet den Druck um; Beschriftung zeigt die nächste Aktion; Vibration |
+| `PrinterFeedback` | Statusleuchte (blau bereit, grün pulsierend druckt, gelb blinkend pausiert, weiß fertig), Text auf dem Display, räumliches Motorgeräusch + Pieptöne + Gong, Statuszeile am Schild |
+| `PrintedPart` + `Prefabs/PrintedPart.prefab` | Bauteil mit Rigidbody, Collider, `Grabbable`, Hand- und Controller-Grab (Quick Action *Add Grab Interaction*). Während des Drucks nicht greifbar; danach wird es beim Loslassen vom Bett gelöst und per `Grabbable.ForceKinematicDisabled` zum Physikobjekt. Bis zu 5 entnommene Teile bleiben im Raum |
+| `PrinterColliders` | MeshCollider am Rahmen, BoxCollider am Bett, damit man Teile zurücklegen kann |
 
-### Picking up the printed part
+**Verschieben** – `RayDraggable` (`Common/`) erzeugt zur Laufzeit einen Trigger-`BoxCollider` als Griff,
+eine `ColliderSurface` und ein `RayInteractable`; Feedback: Aufhellen beim Zielen, blau beim Ziehen (`HoverTint`),
+Aufnehmen-/Ablegen-Sound, Vibration und ein kurzer Tick beim Wand- bzw. Untergrundwechsel.
 
-- `Assets/Prefabs/PrintedPart.prefab` was set up with the Interaction SDK Quick Action
-  *Add Grab Interaction* (Rigidbody, collider, `Grabbable`, hand + controller grab interactables).
-- `PrintedPart` disables grabbing while the part is being printed and enables it when the print is done.
-  On release the part is detached from the bed; `Grabbable.ForceKinematicDisabled` turns it into a
-  physics object, so it falls or can be thrown and lands on the room's Effect Mesh colliders.
-- `PrinterController` measures the prefab's size (layer height + nozzle circle), grows it with its
-  bottom on the bed, clears untouched parts on the next print and keeps up to 5 taken parts in the room.
-- `PrinterColliders` adds a MeshCollider to the frame and a BoxCollider to the bed, so parts can be put back.
-
-### Moving the sign and the printer
-
-Point at the sign or the printer with the ray (controller: trigger, hand: pinch), hold and move:
-
-| Object | Behaviour |
+| Objekt | Verhalten |
 |--------|-----------|
-| Wall sign | Slides along the wall under the ray, stays inside the wall, jumps to another wall when the ray points at it (`SignRepositioner`, uses `MRUKRoom.Raycast` against the wall anchors) |
-| Printer | Follows the ray at the grabbed distance (thumbstick pushes/pulls). A downward `MRUKRoom.Raycast` finds what is below: on a table/cabinet top it stands on it and the stand disappears, on the floor it stands on the stand, outside the room it stays. It turns towards the user while moving (`PrinterRepositioner`) |
+| Schild | `SignRepositioner`: `MRUKRoom.Raycast` gegen die Wand-Anker; das Schild folgt dem Strahl auf der Wand, bleibt innerhalb der Wandfläche und wechselt auf die Wand, auf die der Strahl zeigt |
+| Drucker | `PrinterRepositioner`: hält den gegriffenen Punkt in fester Entfernung auf dem Strahl (Stick schiebt/zieht). Ein Raycast nach unten in das Raummodell findet den Untergrund: Tisch/Schrank → direkt darauf, Podest ausgeblendet; Boden → auf dem Podest; außerhalb des Raums → bleibt stehen. Dreht sich beim Verschieben zum Nutzer |
 
-`RayDraggable` (`Assets/Scripts/Common/`) adds the Interaction SDK parts at runtime: a trigger `BoxCollider`
-as handle, a `ColliderSurface` and a `RayInteractable`. Feedback: the object lightens when hovered and turns
-blue while it is dragged (`HoverTint`), pick-up/drop sounds, controller vibration, and a short tick when the
-sign changes walls or the printer changes surface.
+**Raumwechsel** (`Assets/Scripts/Room/`) – MRUK lädt das Raummodell nur beim Start. Geht der Nutzer in einen
+anderen Raum (andere Boundary), lässt sich der alte Raum nicht mehr orten und die Inhalte blieben an den alten Koordinaten.
 
-### Changing rooms (`Assets/Scripts/Room/`)
+| Komponente | Aufgabe |
+|------------|---------|
+| `RoomManager` | Lädt den Raum neu (`MRUK.LoadSceneFromDevice`), sobald die App wieder Fokus bekommt oder die Ansicht neu zentriert wird (die Quest pausiert die App für ihren Boundary-Dialog). Ist der Nutzer in einem **anderen Raum** (andere Raum-UUID), werden die Effect-Mesh-Collider neu gebaut, entnommene Teile entfernt und Schild und Drucker neu platziert; sonst bewegt sich nichts, damit die eigene Anordnung erhalten bleibt |
+| `WristMenu` | Panel über der linken Hand mit Raumstatus und zwei Poke-Buttons: **Re-place** (neu laden und neu platzieren) und **Scan room** (`OVRScene.RequestSpaceSetup`, danach neu laden). Erscheint erst, wenn die Hand kurz im Blickfeld bleibt (Hysterese gegen Flackern) |
 
-MRUK loads the room model once at startup. If the user walks into another space (other boundary),
-the old room can no longer be located and the content would stay at the old coordinates.
+MRUKs *Data Source* steht auf **Device**: Ohne Space-Setup-Daten werden die Inhalte vor dem Nutzer platziert
+statt in einem zufälligen Beispielraum (*Device With Prefab Fallback*). Im Editor (keine Raumdaten) greift diese Fallback-Platzierung.
 
-| Component | Role |
-|-----------|------|
-| `RoomManager` | Reloads the room (`MRUK.LoadSceneFromDevice`) when the app regains focus or the view is recentred – the Quest pauses the app for its boundary prompt. If the user is in a **different room** (other room UUID), the Effect Mesh colliders are rebuilt, taken parts removed and the sign and printer placed again; otherwise nothing moves, so the user's repositioning is kept |
-| `WristMenu` | Raise the left hand/controller into view: a panel appears above it with the room status and two poke buttons – **Re-place** (reload and place sign + printer again) and **Scan room** (`OVRScene.RequestSpaceSetup`, then reload). Left controller menu button (≡) = Re-place |
+Die Materialien in `Assets/Materials` sind von URPs `Lit.mat` abgeleitet; Emission ist im Asset aktiviert,
+damit die Shader-Variante mit Emission im Quest-Build enthalten ist.
 
-MRUK's *Data Source* is set to **Device**: without Space Setup data the content is placed in front of
-the user instead of on a random sample room (*Device With Prefab Fallback*). In the Editor (no headset
-room data) the fallback placement is used.
-
-Sounds are synthesised by `Tools/Audio/generate_sounds.py` (no third-party audio).
-Materials in `Assets/Materials` are derived from URP's `Lit.mat`; emission is enabled in the asset
-so the emissive shader variant is included in the Quest build.
-
-## Repository layout
-
-```
-Assets/            Project content (scenes, scripts, prefabs, models) – versioned
-SourceAssets/      Unmodified third-party originals (not imported by Unity)
-Tools/Blender/     Blender scripts that generate assets in Assets/Models
-Tools/Audio/       Python script that generates the sound effects in Assets/Audio
-Packages/          manifest.json + packages-lock.json (dependencies) – versioned
-ProjectSettings/   Unity project settings – versioned
-Library/ Temp/ Logs/ UserSettings/   regenerated locally – ignored (.gitignore)
-.gitattributes     Git LFS rules for binaries + LF line endings for Unity YAML
-```
-
-## Version control
-
-- `.gitignore` is based on the official [GitHub Unity template](https://github.com/github/gitignore/blob/main/Unity.gitignore).
-- Binary assets (models, textures, audio, fonts, native libraries) are stored with **Git LFS**, see `.gitattributes`.
-  Check which files are in LFS with `git lfs ls-files`.
-- Workflow: `main` stays runnable; each task is developed on a `feature/*` branch and merged with `--no-ff`.
-
-## Third-party assets
-
-| Asset | Author | Source | License |
-|-------|--------|--------|---------|
-| 3D Printer (machine model) | [Gregsterius](https://sketchfab.com/Gregsterius) | [Sketchfab](https://sketchfab.com/3d-models/3d-printer-0e825a8d48b14bee883a131fe029d4fc) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) |
-
-The model was modified for this project (see below); the unmodified original is kept in `SourceAssets/Printer3D/`.
-
-## Model pipeline (Blender)
-
-`Assets/Models/Printer3D/Printer3D.fbx` is generated from the original download with a Blender script (Blender 5.2):
+**Modell-Pipeline (Blender)** – `Assets/Models/Printer3D/Printer3D.fbx` wird aus dem Original erzeugt:
 
 ```bash
 blender --background --factory-startup --python Tools/Blender/prepare_printer.py -- \
     SourceAssets/Printer3D/Printer.fbx Assets/Models/Printer3D/Printer3D.fbx
 ```
 
-The script groups the ~80 loose parts into the printer's moving assemblies, joins each into one mesh
-(fewer draw calls on Quest), scales the model to a real-world height of 0.45 m and sets pivots for animation:
+| Objekt | Bewegung | Pivot |
+|--------|----------|-------|
+| `Frame` | statisch | Bodenmitte |
+| `Bed` | Y-Achse (vor/zurück) | Mitte der Bettoberfläche |
+| `Gantry` | Z-Achse (hoch/runter) | Mitte des Balkens |
+| `PrintHead` | X-Achse auf dem Portal | Düsenspitze |
+| `ZCable`, `FilamentTube` | werden mitgestreckt | festes Ende |
+| `Display`, `DisplayAnchor` | statisch, Bildschirm leuchtet leicht blau | Mitte des Bildschirms |
 
-| Object | Moves along | Pivot |
-|--------|-------------|-------|
-| `Frame` | static | floor centre |
-| `Bed` | Y axis (front/back) | centre of bed surface |
-| `Gantry` | Z axis (up/down) | centre of beam |
-| `PrintHead` | X axis on the gantry | nozzle tip |
-| `ZCable`, `FilamentTube` | stretched to follow gantry/head | fixed end |
-| `Display`, `DisplayAnchor` | static, screen has a soft blue emissive glow | centre of front screen |
+Alle Teile sind direkte Kinder von `Printer3D` (Blenders FBX-Option *Apply Transform* verdreht verschachtelte
+Kinder), deshalb bewegt der Controller-Code `PrintHead` zusammen mit `Gantry`.
 
-All parts are direct children of `Printer3D` (Blender's *Apply Transform* FBX option breaks nested
-children), so the controller script moves `PrintHead` together with `Gantry`.
+### Versionsverwaltung
 
-## Author
+- `.gitignore` basiert auf dem offiziellen [GitHub-Unity-Template](https://github.com/github/gitignore/blob/main/Unity.gitignore)
+  (plus maschinenspezifische Meta-Einstellungen, Build-Nebenprodukte und Unitys Crash-Recovery-Szenen).
+- Binärdateien (Modelle, Texturen, Audio, Schriften, native Bibliotheken) liegen in **Git LFS**, siehe `.gitattributes`;
+  Unity-YAML wird mit LF-Zeilenenden gespeichert. Prüfen mit `git lfs ls-files`.
+- Workflow: `main` bleibt lauffähig; jede Aufgabe wird auf einem `feature/*`-Branch entwickelt und mit `--no-ff` gemergt.
+
+## 1.4 Eigenleistung und Reflexion
+
+> **TODO (Linus):** Abschnitt prüfen und in eigenen Worten ergänzen – Zeitangaben und Reflexion kann nur ich selbst schreiben.
+
+### Eigenleistung
+
+- **Selbst umgesetzt im Unity Editor:** Projekt-Setup (Unity 6 / URP, Meta XR SDK, OpenXR, Android-Build),
+  Szene mit Building Blocks (Camera Rig, Passthrough, MR Utility Kit, Interactions Rig, Effect Mesh) und deren
+  Konfiguration (z. B. Locomotion deaktiviert, Licht), `PrintedPart`-Prefab mit Grab-Interaktion,
+  Auswahl des Druckermodells, Tests auf der Quest.
+- **Code und Skripte:** C#-Skripte, Blender- und Audio-Skripte habe ich mit Unterstützung eines KI-Assistenten
+  (Claude) entwickelt; die Commits sind entsprechend mit `Co-Authored-By` gekennzeichnet.
+  *TODO: eigenen Anteil / eigene Änderungen genauer beschreiben.*
+- **Zeitaufwand:** *TODO: ca. … Stunden.*
+- **Größter Zeitaufwand:** *TODO, z. B. Quest-Builds (je 10–15 min, zwei PC-Abstürze beim Bauen), Fehlersuche auf dem Headset, Aufbau der Szene.*
+
+### Reflexion
+
+*TODO – mögliche Punkte:*
+- **Einfach:** *z. B. Passthrough und Kamera-Rig über Building Blocks, Abhängigkeiten über die Meta-Registry.*
+- **Schwer:** *z. B. lange Build-Zeiten und Abstürze, Setup-Tool-Dialog unter Linux, Locomotion des Interactions Rig
+  (Schwerkraft ließ den Nutzer fallen), Editor-Absturz mit Wiederherstellung der Szene, Teile des Modells für die
+  Animation zu trennen.*
+
+## Autor
 
 Linus Pihan
