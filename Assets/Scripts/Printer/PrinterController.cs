@@ -52,6 +52,10 @@ namespace MxR.Printer
         public PrinterState State { get; private set; } = PrinterState.Idle;
         /// <summary>Progress of the current job, 0..1.</summary>
         public float Progress { get; private set; }
+        /// <summary>0 = axes at home position, 1 = nozzle at the bed (printing pose).</summary>
+        public float Engage => engage;
+        /// <summary>Seconds until the current job is finished (only meaningful while printing/paused).</summary>
+        public float RemainingSeconds => (1f - Progress) * printDuration;
 
         // rest pose (as imported)
         Vector3 gantryRest, headRest, bedRest, tubeRest;
