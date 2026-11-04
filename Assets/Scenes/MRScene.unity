@@ -1163,7 +1163,7 @@ MonoBehaviour:
   printedPartPrefab: {fileID: 1544741231838890885, guid: 98315b99da4a5985380baaad2ba8a058, type: 3}
   tintPrintedPart: 1
   maxPartsInRoom: 5
-  startOnPlay: 1
+  startOnPlay: 0
   onStateChanged:
     m_PersistentCalls:
       m_Calls: []
