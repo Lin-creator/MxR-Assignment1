@@ -238,58 +238,23 @@ Kinder), deshalb bewegt der Controller-Code `PrintHead` zusammen mit `Gantry`.
 
 ### Eigenleistung
 
-**Konzept und Gestaltung.** Die Idee für die App und alle Interaktionen habe ich festgelegt und schrittweise
-verfeinert: einen 3D-Drucker als Maschine, das Bauteil, das man nach dem Druck greifen kann, das Verschieben
-von Schild und Drucker, das Handgelenk-Menü für den Raumwechsel, das Display als Touchscreen statt eines
-separaten Knopfs und die Modellauswahl über halbtransparente Vorschauen auf dem Druckbett, durch die man
-mit dem Finger wischt. Das Druckermodell habe ich auf Sketchfab ausgesucht (Lizenz, Polygonzahl, trennbare Teile).
-
-**Unity Editor und Tests.** Selbst umgesetzt habe ich:
-- das Projekt-Setup (Unity 6 / URP, Meta XR SDK über die Meta-Registry, OpenXR, Android-Build) und das Meta Project Setup Tool;
-- den Szenenaufbau mit Building Blocks (Camera Rig, Passthrough, MR Utility Kit, Interactions Rig, Effect Mesh)
-  und deren Konfiguration, z. B. das Abschalten der Locomotion und das Licht;
-- das `PrintedPart`-Prefab mit der Grab-Interaktion (Quick Action *Add Grab Interaction*);
-- das Bauen und Testen auf der Quest 2 und die Rückmeldungen daraus, z. B. dass der Display-Text auf einer
-  Seite im Drucker verschwand.
-
-**Code und Skripte mit KI-Unterstützung.** Die C#-Skripte, die Blender-Skripte (Druckermodell vorbereiten,
-druckbare Modelle erzeugen, Bildschirm vermessen) und das Sound-Skript habe ich zusammen mit einem
-KI-Assistenten (Claude) entwickelt: Ich habe die Anforderungen und das Verhalten vorgegeben, die Ergebnisse
-im Editor und auf dem Headset geprüft und Korrekturen angestoßen; der Assistent hat den Großteil des Codes
-geschrieben. Die betroffenen Commits sind mit `Co-Authored-By: Claude` gekennzeichnet, Commits mit reiner
-Editor-Arbeit nicht.
-
-**Zeitaufwand.** Insgesamt etwa 13–15 Stunden – einschließlich Einrichtung von Unity und Meta SDK,
-Recherche, Modellsuche, Warten auf Builds und Tests auf dem Headset.
-
-**Was am meisten Zeit gekostet hat:**
-- **Quest-Builds:** jeder Build dauerte 10–15 Minuten, zwei Builds haben den PC zum Absturz gebracht
-  (vermutlich zu wenig Arbeitsspeicher beim IL2CPP-Kompilieren). Deshalb habe ich selten gebaut und viele
-  Änderungen erst am Ende zusammen auf dem Headset getestet. Die Einstellung *IL2CPP Code Generation:
-  Faster (smaller) builds* hat geholfen.
-- **Szenenaufbau und Fehlersuche im Editor:** das Interactions Rig mit aktiver Locomotion (der Nutzer fiel durch
-  die Schwerkraft nach unten), die fehlende Lichtquelle (Lit-Materialien wirkten schwarz) und ein Editor-Absturz,
-  nach dem die Szene aus Unitys Recovery-Datei wiederhergestellt werden musste.
-- **Das Druckermodell für die Animation vorbereiten:** rund 80 lose Einzelteile den beweglichen Baugruppen
-  zuordnen, Pivots setzen und das Achsensystem zwischen Blender und Unity richtig umrechnen.
+- **Konzept:** Idee der App und aller Interaktionen (Druck per Touch-Display, Modellauswahl über Vorschauen,
+  greifbare Bauteile, Verschieben, Raumwechsel), Auswahl des Druckermodells.
+- **Unity Editor:** Projekt-Setup (URP, Meta XR SDK, OpenXR, Android), Szene mit Building Blocks und deren
+  Konfiguration, `PrintedPart`-Prefab mit Grab-Interaktion, Builds und Tests auf der Quest 2.
+- **Code:** C#-, Blender- und Audio-Skripte mit Unterstützung eines KI-Assistenten (Claude) entwickelt –
+  Anforderungen und Tests von mir, Commits mit `Co-Authored-By` gekennzeichnet.
+- **Zeitaufwand:** etwa 13–15 Stunden. Am meisten Zeit kosteten die Quest-Builds (10–15 min pro Build, zwei
+  PC-Abstürze), die Fehlersuche in der Szene und das Aufteilen des Druckermodells für die Animation.
 
 ### Reflexion
 
-**Einfach** waren die Grundlagen, die Meta fertig mitliefert: Passthrough, Kamera-Rig und Hand-/Controller-Interaktion
-über Building Blocks, die Raumdaten über das MR Utility Kit (Key Wall, Tische, Boden) und die Poke- und
-Grab-Interaktion aus dem Interaction SDK. Auch Git LFS und eine saubere Branch-Struktur einzurichten war unkompliziert.
-
-**Schwer** war alles, was man nur auf dem Headset sieht. Der Editor hat keine echten Raumdaten, daher ließen sich
-Platzierung, Wischgeste und Ausrichtung des Displays erst auf der Quest beurteilen – bei 10–15 Minuten pro Build
-ist das ein langsamer Kreislauf. Dazu kamen Linux-spezifische Probleme: Der Neustart-Dialog des Meta Setup Tools
-ließ sich nicht bedienen, und Unity hat sich während eines Builds selbst auf *Unity Version Control* umgestellt.
-Fehler in Annahmen zeigten sich spät, z. B. eine von Hand gemessene Bildschirmnormale, die um einige Grad daneben lag.
-
-**Gelernt** habe ich vor allem, wie Mixed Reality Inhalte an den echten Raum bindet (Anker, Key Wall, Raumwechsel)
-und wie man Interaktionen so gestaltet, dass sie sich selbst erklären: leuchtendes und pulsierendes Display,
-Hinweise direkt am Objekt („Grab me!“), Geräusche und Vibration als Bestätigung. Beim nächsten Projekt würde
-ich früher und öfter auf dem Headset testen und die Maße von Modellen gleich aus der Geometrie messen statt
-sie zu schätzen.
+- **Einfach:** Passthrough, Raumdaten und Hand-/Controller-Interaktion über Metas Building Blocks, MRUK und
+  das Interaction SDK.
+- **Schwer:** Vieles ließ sich nur auf dem Headset testen, bei langen Build-Zeiten ein langsamer Kreislauf;
+  dazu Linux-Probleme mit dem Meta Setup Tool und ein Editor-Absturz.
+- **Gelernt:** Inhalte an den echten Raum binden und Interaktionen durch Feedback (Leuchten, Hinweise, Sound,
+  Vibration) selbsterklärend machen. Nächstes Mal würde ich früher und öfter auf dem Headset testen.
 
 ## Autor
 
