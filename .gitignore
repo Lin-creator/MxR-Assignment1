@@ -122,3 +122,6 @@ Thumbs.db
 # Meta Immersive Debugger Dev Agent: per-machine access token + LAN IP, regenerated automatically
 /[Aa]ssets/[Rr]esources/DevAgentSettings.asset
 /[Aa]ssets/[Rr]esources/DevAgentSettings.asset.meta
+
+# Python bytecode (Tools/Blender scripts)
+__pycache__/
