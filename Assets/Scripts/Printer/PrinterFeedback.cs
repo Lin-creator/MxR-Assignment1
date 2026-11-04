@@ -173,24 +173,24 @@ namespace MxR.Printer
                     sign = "Status: starting print";
                     break;
                 case State.Printing:
-                    screen = $"<b>PRINTING</b>\n{percent}%  <size=60%>{time} left</size>";
+                    screen = $"<b>PRINTING</b>\n{percent}%  <size=60%>{time} left</size>\n<size=45%>tap to pause</size>";
                     sign = $"Status: printing {percent}% ({time} left)";
                     break;
                 case State.Paused:
-                    screen = $"<b>PAUSED</b>\n{percent}%";
+                    screen = $"<b>PAUSED</b>\n{percent}%\n<size=45%>tap to resume</size>";
                     sign = $"Status: paused at {percent}%";
                     break;
                 case State.Finished when printer.PrintsGrabbableParts:
-                    screen = "<b>DONE</b>\n<size=60%>take your part</size>";
+                    screen = "<b>DONE</b>\n<size=60%>take your part</size>\n<size=45%>tap to print again</size>";
                     sign = "Status: print finished - pick up your part!";
                     break;
                 case State.Finished:
-                    screen = "<b>DONE</b>\n<size=60%>print finished</size>";
+                    screen = "<b>DONE</b>\n<size=60%>print finished</size>\n<size=45%>tap to print again</size>";
                     sign = "Status: print finished";
                     break;
                 default:
-                    screen = "<b>READY</b>\n<size=60%>press PRINT</size>";
-                    sign = "Status: ready - press PRINT next to the printer";
+                    screen = "<b>READY</b>\n<size=60%>tap to print</size>";
+                    sign = "Status: ready - tap the printer's display to print";
                     break;
             }
             if (display) display.text = screen;

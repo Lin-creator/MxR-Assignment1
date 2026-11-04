@@ -21,7 +21,7 @@ namespace MxR.Sign
         [SerializeField, TextArea(4, 8)] string description =
             "An FDM 3D printer melts plastic filament in a heated nozzle and builds objects layer by layer. " +
             "The print head moves left/right (X), the bed moves front/back (Y) and the gantry moves up (Z) " +
-            "after every layer.\n\nPress the button next to the printer to start a print.";
+            "after every layer.\n\nTap the printer's display to start a print.";
         [SerializeField] string initialStatus = "Status: ready";
 
         [Header("Look")]

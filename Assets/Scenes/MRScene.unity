@@ -334,8 +334,8 @@ MonoBehaviour:
     (Y) and the gantry moves up (Z) after every layer.
 
 
-    Press the button next
-    to the printer to start a print.'
+    Tap the printer''s display
+    to start a print.'
   initialStatus: 'Status: ready'
   size: {x: 0.9, y: 0.6}
   boardMaterial: {fileID: 2100000, guid: 949f24bf9d244e13a36bdd883e232d93, type: 2}
@@ -1106,15 +1106,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cbb07249711e424eb3e0d5184d3d4ac3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MxR.Printer.PrinterButton
+  m_EditorClassIdentifier: Assembly-CSharp::MxR.Printer.PrinterTouchscreen
   buttonPrefab: {fileID: 4171210596153234762, guid: 323cb65d2594c79499a11a99ff0fb347, type: 3}
-  localPosition: {x: -0.27, y: 0.05, z: 0.12}
-  localEuler: {x: 40, y: 180, z: 0}
-  buttonScale: 1
-  labelIdle: Print
-  labelPrinting: Pause
-  labelPaused: Resume
-  labelFinished: Print again
+  screenNormal: {x: -0.089, y: 0.267, z: 0.96}
+  touchSize: {x: 0.09, y: 0.06}
   hapticAmplitude: 0.6
   hapticDuration: 0.08
 --- !u!114 &1740714897
@@ -1132,8 +1127,8 @@ MonoBehaviour:
   preferTable: 1
   minTableSize: {x: 0.6, y: 0.4}
   standHeight: 0.75
-  standFootprint: {x: 0.8, y: 0.55}
-  standOffsetX: -0.12
+  standFootprint: {x: 0.6, y: 0.55}
+  standOffsetX: 0
   standMaterial: {fileID: 2100000, guid: e435fb5b6c564f8195c24576627ed05c, type: 2}
   distanceFromWall: 0.9
   sideOffset: 0.6
