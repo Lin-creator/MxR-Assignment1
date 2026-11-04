@@ -118,3 +118,6 @@ InitTestScene*.unity*
 Thumbs.db
 .idea/
 .vscode/
+
+# Python bytecode (Tools/Blender scripts)
+__pycache__/
