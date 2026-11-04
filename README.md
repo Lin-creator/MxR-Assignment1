@@ -43,6 +43,8 @@ git lfs pull   # only needed if LFS was installed after cloning
 
 ```
 Assets/            Project content (scenes, scripts, prefabs, models) – versioned
+SourceAssets/      Unmodified third-party originals (not imported by Unity)
+Tools/Blender/     Blender scripts that generate assets in Assets/Models
 Packages/          manifest.json + packages-lock.json (dependencies) – versioned
 ProjectSettings/   Unity project settings – versioned
 Library/ Temp/ Logs/ UserSettings/   regenerated locally – ignored (.gitignore)
@@ -58,7 +60,35 @@ Library/ Temp/ Logs/ UserSettings/   regenerated locally – ignored (.gitignore
 
 ## Third-party assets
 
-_Model sources and licences will be listed here._
+| Asset | Author | Source | License |
+|-------|--------|--------|---------|
+| 3D Printer (machine model) | [Gregsterius](https://sketchfab.com/Gregsterius) | [Sketchfab](https://sketchfab.com/3d-models/3d-printer-0e825a8d48b14bee883a131fe029d4fc) | [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/) |
+
+The model was modified for this project (see below); the unmodified original is kept in `SourceAssets/Printer3D/`.
+
+## Model pipeline (Blender)
+
+`Assets/Models/Printer3D/Printer3D.fbx` is generated from the original download with a Blender script (Blender 5.2):
+
+```bash
+blender --background --factory-startup --python Tools/Blender/prepare_printer.py -- \
+    SourceAssets/Printer3D/Printer.fbx Assets/Models/Printer3D/Printer3D.fbx
+```
+
+The script groups the ~80 loose parts into the printer's moving assemblies, joins each into one mesh
+(fewer draw calls on Quest), scales the model to a real-world height of 0.45 m and sets pivots for animation:
+
+| Object | Moves along | Pivot |
+|--------|-------------|-------|
+| `Frame` | static | floor centre |
+| `Bed` | Y axis (front/back) | centre of bed surface |
+| `Gantry` | Z axis (up/down) | centre of beam |
+| `PrintHead` | X axis on the gantry | nozzle tip |
+| `ZCable`, `FilamentTube` | stretched to follow gantry/head | fixed end |
+| `Display`, `DisplayAnchor` | static, screen has a soft blue emissive glow | centre of front screen |
+
+All parts are direct children of `Printer3D` (Blender's *Apply Transform* FBX option breaks nested
+children), so the controller script moves `PrintHead` together with `Gantry`.
 
 ## Author
 
